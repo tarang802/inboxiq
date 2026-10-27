@@ -1,0 +1,16 @@
+{
+  "name": "inboxiq",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Privacy-first inbox intelligence",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w server && npm run build -w client",
+    "format": "prettier --write ."
+  }
+}
