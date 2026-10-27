@@ -1,8 +1,8 @@
-# InboxIQ
+# Sieve
 
 > Privacy-first inbox intelligence for a cleaner, more focused digital life.
 
-InboxIQ is a SaaS application that helps users understand and clean their email inboxes.
+Sieve is a SaaS application that helps users understand and clean their email inboxes.
 
 The platform identifies unwanted email subscriptions, provides inbox analytics, and helps users take control of their email attention.
 
@@ -56,8 +56,8 @@ Coming soon.
 
 ## 📚 Learning Objective
 
-InboxIQ is being developed using a learn-by-building approach.
+Sieve is being developed using a learn-by-building approach.
 
 The goal is to understand the underlying concepts rather than simply generate the application using AI.
 
-## inboxiq
+## sieve
