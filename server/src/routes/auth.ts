@@ -31,9 +31,16 @@ router.get('/google', (_req, res) => {
   const state = randomToken(16);
   const verifier = randomToken(32);
 
+  let url: string;
+  try {
+    url = buildAuthUrl(state, sha256Base64Url(verifier));
+  } catch {
+    return res.redirect(backToClient('not_configured'));
+  }
+
   res.cookie(STATE_COOKIE, state, tempCookie);
   res.cookie(VERIFIER_COOKIE, verifier, tempCookie);
-  res.redirect(buildAuthUrl(state, sha256Base64Url(verifier)));
+  res.redirect(url);
 });
 
 router.get('/google/callback', async (req, res, next) => {
