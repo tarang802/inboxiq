@@ -16,9 +16,22 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  account GoogleAccount?
-  senders Sender[]
-  syncs   SyncRun[]
+  account  GoogleAccount?
+  sessions Session[]
+  senders  Sender[]
+  syncs    SyncRun[]
+}
+
+// id is a sha256 of the cookie token, so a db leak can't be replayed as a login
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model GoogleAccount {
