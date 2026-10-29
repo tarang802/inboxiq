@@ -1,15 +1,40 @@
 import { GMAIL_API_URL } from '../config/google';
 import { HttpError } from '../utils/httpError';
+import { withRetry } from '../utils/retry';
 import { getAccessToken, type AccessToken } from './googleAccount';
 
 export class GmailError extends HttpError {
+  gmailStatus: number;
   reason: string;
+  retryAfterMs?: number;
 
-  constructor(status: number, reason: string) {
+  constructor(status: number, reason: string, retryAfterMs?: number) {
     super(status === 401 ? 401 : 502, `gmail request failed (${status}): ${reason}`);
     this.name = 'GmailError';
+    this.gmailStatus = status;
     this.reason = reason;
+    this.retryAfterMs = retryAfterMs;
   }
+}
+
+const RATE_LIMIT_REASONS = ['rateLimitExceeded', 'userRateLimitExceeded'];
+
+function isRetryable(err: unknown) {
+  // fetch throws a TypeError on network failures
+  if (err instanceof TypeError) return true;
+  if (!(err instanceof GmailError)) return false;
+
+  const { gmailStatus, reason } = err;
+  return (
+    gmailStatus === 429 ||
+    gmailStatus >= 500 ||
+    (gmailStatus === 403 && RATE_LIMIT_REASONS.includes(reason))
+  );
+}
+
+function retryAfterMs(res: Response) {
+  const seconds = Number(res.headers.get('retry-after'));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined;
 }
 
 interface ListResponse {
@@ -64,12 +89,22 @@ export function createGmailClient(userId: string) {
   }
 
   async function request<T>(path: string, params: URLSearchParams): Promise<T> {
-    const res = await fetch(`${GMAIL_API_URL}${path}?${params}`, {
-      headers: { Authorization: `Bearer ${await token()}` },
-    });
+    return withRetry(
+      async () => {
+        const res = await fetch(`${GMAIL_API_URL}${path}?${params}`, {
+          headers: { Authorization: `Bearer ${await token()}` },
+        });
 
-    if (!res.ok) throw new GmailError(res.status, await errorReason(res));
-    return res.json() as Promise<T>;
+        if (!res.ok) {
+          throw new GmailError(res.status, await errorReason(res), retryAfterMs(res));
+        }
+        return res.json() as Promise<T>;
+      },
+      {
+        shouldRetry: isRetryable,
+        delayFor: (err) => (err instanceof GmailError ? err.retryAfterMs : undefined),
+      },
+    );
   }
 
   return {
@@ -90,7 +125,7 @@ export function createGmailClient(userId: string) {
       try {
         return toMeta(await request<RawMessage>(`/messages/${encodeURIComponent(id)}`, params));
       } catch (err) {
-        if (err instanceof GmailError && err.reason === 'notFound') return null;
+        if (err instanceof GmailError && err.gmailStatus === 404) return null;
         throw err;
       }
     },
