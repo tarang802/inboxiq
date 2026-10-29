@@ -92,3 +92,9 @@ export function parseListUnsubscribe(value: string | undefined): Unsubscribe {
 
   return result;
 }
+
+// rfc 8058: one-click needs an https link and List-Unsubscribe-Post: List-Unsubscribe=One-Click
+export function isOneClick(unsub: Unsubscribe, postHeader: string | undefined) {
+  if (!unsub.url?.startsWith('https:') || !postHeader) return false;
+  return postHeader.replace(/\s/g, '').toLowerCase() === 'list-unsubscribe=one-click';
+}
