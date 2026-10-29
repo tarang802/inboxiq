@@ -19,13 +19,23 @@ function messageDate(msg: MessageMeta) {
   return new Date(Number.isNaN(parsed) ? Date.now() : parsed);
 }
 
+// mail the user wrote themselves would make them their own top sender
+const SKIP_LABELS = ['SENT', 'DRAFT'];
+
 // folds messages into one summary per sender address. nothing per message is kept
 export class SenderAggregator {
   private senders = new Map<string, SenderAggregate>();
+  private selfEmail: string;
+
+  constructor(selfEmail: string) {
+    this.selfEmail = selfEmail.toLowerCase();
+  }
 
   add(msg: MessageMeta) {
+    if (msg.labelIds.some((label) => SKIP_LABELS.includes(label))) return false;
+
     const from = parseFrom(msg.headers.from);
-    if (!from) return false;
+    if (!from || from.email === this.selfEmail) return false;
 
     const date = messageDate(msg);
     const unsub = parseListUnsubscribe(msg.headers['list-unsubscribe']);
