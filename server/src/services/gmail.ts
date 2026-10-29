@@ -82,18 +82,33 @@ async function errorReason(res: Response) {
 
 export function createGmailClient(userId: string) {
   let access: AccessToken | null = null;
+  let pending: Promise<AccessToken> | null = null;
 
+  // access tokens last about an hour and a big sync can outlive one.
+  // refresh a minute early, and share one refresh between parallel workers
   async function token() {
-    if (!access) access = await getAccessToken(userId);
+    if (!access || access.expiresAt - 60_000 < Date.now()) {
+      pending ??= getAccessToken(userId).finally(() => {
+        pending = null;
+      });
+      access = await pending;
+    }
     return access.token;
   }
 
   async function request<T>(path: string, params: URLSearchParams): Promise<T> {
+    const url = `${GMAIL_API_URL}${path}?${params}`;
+    const send = async () => fetch(url, { headers: { Authorization: `Bearer ${await token()}` } });
+
     return withRetry(
       async () => {
-        const res = await fetch(`${GMAIL_API_URL}${path}?${params}`, {
-          headers: { Authorization: `Bearer ${await token()}` },
-        });
+        let res = await send();
+
+        // token expired early or was rotated: get a fresh one and try once more
+        if (res.status === 401) {
+          access = null;
+          res = await send();
+        }
 
         if (!res.ok) {
           throw new GmailError(res.status, await errorReason(res), retryAfterMs(res));
