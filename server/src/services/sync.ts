@@ -68,7 +68,23 @@ async function runSync(runId: string, user: SyncUser) {
   }
 }
 
+// a crash mid-sync leaves the run RUNNING forever, which would block every new sync
+const STALE_MS = 60 * 60 * 1000;
+
+function failStaleSyncs(userId: string) {
+  return prisma.syncRun.updateMany({
+    where: {
+      userId,
+      status: { in: [...ACTIVE] },
+      startedAt: { lt: new Date(Date.now() - STALE_MS) },
+    },
+    data: { status: 'FAILED', error: 'sync timed out', finishedAt: new Date() },
+  });
+}
+
 export async function startSync(user: SyncUser) {
+  await failStaleSyncs(user.id);
+
   const active = await prisma.syncRun.findFirst({
     where: { userId: user.id, status: { in: [...ACTIVE] } },
   });
