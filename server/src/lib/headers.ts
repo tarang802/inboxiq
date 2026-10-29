@@ -6,11 +6,35 @@ export interface ParsedFrom {
 
 const ANGLE_ADDR = /<([^<>@\s]+@[^<>\s]+)>/;
 const BARE_ADDR = /([^\s<>"(),;:]+@[^\s<>"(),;:]+)/;
+const ENCODED_WORD = /=\?([^?]+)\?([bBqQ])\?([^?]*)\?=/g;
+
+function decodeQ(text: string) {
+  const latin = text
+    .replace(/_/g, ' ')
+    .replace(/=([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+  return Buffer.from(latin, 'latin1');
+}
+
+// rfc 2047, e.g. =?UTF-8?B?SmFuZQ==?= -> Jane. leaves anything it can't decode as is
+export function decodeEncodedWords(value: string) {
+  // whitespace between two encoded words is not part of the text
+  const joined = value.replace(/(\?=)\s+(=\?)/g, '$1$2');
+
+  return joined.replace(ENCODED_WORD, (match, charset: string, enc: string, text: string) => {
+    try {
+      const bytes = enc.toUpperCase() === 'B' ? Buffer.from(text, 'base64') : decodeQ(text);
+      // charset can carry a language suffix like utf-8*en
+      return new TextDecoder(charset.split('*')[0]).decode(bytes);
+    } catch {
+      return match;
+    }
+  });
+}
 
 function cleanName(name: string | null, email: string) {
   if (!name) return null;
 
-  const cleaned = name
+  const cleaned = decodeEncodedWords(name)
     .replace(/^"(.*)"$/, '$1')
     .replace(/\\(.)/g, '$1')
     .trim();
