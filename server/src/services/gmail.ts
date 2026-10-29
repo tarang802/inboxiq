@@ -17,6 +17,39 @@ interface ListResponse {
   nextPageToken?: string;
 }
 
+interface RawMessage {
+  id: string;
+  labelIds?: string[];
+  internalDate?: string;
+  payload?: { headers?: { name: string; value: string }[] };
+}
+
+// the only headers we ever ask for. bodies are never fetched
+export const METADATA_HEADERS = ['From', 'Date', 'List-Unsubscribe', 'List-Unsubscribe-Post'];
+
+export interface MessageMeta {
+  id: string;
+  labelIds: string[];
+  internalDate: number;
+  // lowercased header names
+  headers: Record<string, string>;
+}
+
+function toMeta(msg: RawMessage): MessageMeta {
+  const headers: Record<string, string> = {};
+  for (const { name, value } of msg.payload?.headers ?? []) {
+    const key = name.toLowerCase();
+    if (!(key in headers)) headers[key] = value;
+  }
+
+  return {
+    id: msg.id,
+    labelIds: msg.labelIds ?? [],
+    internalDate: Number(msg.internalDate ?? 0),
+    headers,
+  };
+}
+
 async function errorReason(res: Response) {
   const body = await res.json().catch(() => ({}));
   return body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? res.statusText;
@@ -47,6 +80,19 @@ export function createGmailClient(userId: string) {
 
       const data = await request<ListResponse>('/messages', params);
       return { ids: (data.messages ?? []).map((m) => m.id), nextPageToken: data.nextPageToken };
+    },
+
+    // returns null if the message was deleted after it was listed
+    async getMessage(id: string): Promise<MessageMeta | null> {
+      const params = new URLSearchParams({ format: 'metadata' });
+      for (const header of METADATA_HEADERS) params.append('metadataHeaders', header);
+
+      try {
+        return toMeta(await request<RawMessage>(`/messages/${encodeURIComponent(id)}`, params));
+      } catch (err) {
+        if (err instanceof GmailError && err.reason === 'notFound') return null;
+        throw err;
+      }
     },
   };
 }
