@@ -62,3 +62,33 @@ export function parseFrom(value: string | undefined): ParsedFrom | null {
 
   return { name: cleanName(rawName, email), email, domain };
 }
+
+export interface Unsubscribe {
+  url: string | null;
+  mail: string | null;
+}
+
+// List-Unsubscribe: <https://x.com/u?id=1>, <mailto:unsub@x.com?subject=stop>
+export function parseListUnsubscribe(value: string | undefined): Unsubscribe {
+  const result: Unsubscribe = { url: null, mail: null };
+  if (!value) return result;
+
+  // entries should be in angle brackets, but some senders skip them
+  const bracketed = [...value.matchAll(/<([^>]+)>/g)].map((m) => m[1].trim());
+  const entries = bracketed.length ? bracketed : value.split(',').map((s) => s.trim());
+
+  for (const entry of entries) {
+    let parsed: URL;
+    try {
+      parsed = new URL(entry);
+    } catch {
+      continue;
+    }
+
+    const isWeb = parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    if (isWeb && !result.url) result.url = parsed.toString();
+    if (parsed.protocol === 'mailto:' && !result.mail) result.mail = entry;
+  }
+
+  return result;
+}
