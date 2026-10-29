@@ -82,6 +82,14 @@ function failStaleSyncs(userId: string) {
   });
 }
 
+// syncs run in this process, so any left active at boot died with the last one
+export function failInterruptedSyncs() {
+  return prisma.syncRun.updateMany({
+    where: { status: { in: [...ACTIVE] } },
+    data: { status: 'FAILED', error: 'interrupted by a server restart', finishedAt: new Date() },
+  });
+}
+
 export async function startSync(user: SyncUser) {
   await failStaleSyncs(user.id);
 
