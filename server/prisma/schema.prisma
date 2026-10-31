@@ -75,6 +75,8 @@ model Sender {
   @@unique([userId, email])
   @@index([userId, status])
   @@index([userId, messageCount])
+  @@index([userId, clutterScore])
+  @@index([userId, lastSeenAt])
 }
 
 enum SyncStatus {
