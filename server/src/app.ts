@@ -9,6 +9,7 @@ import authRouter from './routes/auth';
 import meRouter from './routes/me';
 import syncRouter from './routes/sync';
 import sendersRouter from './routes/senders';
+import analyticsRouter from './routes/analytics';
 import { loadSession } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
@@ -27,6 +28,7 @@ export function createApp() {
   app.use('/me', meRouter);
   app.use('/sync', syncRouter);
   app.use('/senders', sendersRouter);
+  app.use('/analytics', analyticsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
