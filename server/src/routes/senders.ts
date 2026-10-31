@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth';
 import {
   SORTS,
+  bulkSetStatus,
+  bulkUnsubscribe,
   listSenders,
   senderSummary,
   setSenderStatus,
@@ -54,6 +56,29 @@ router.patch('/:id', async (req, res, next) => {
     const { status } = parse(statusBody, req.body);
     const sender = await setSenderStatus(req.user!.id, req.params.id, status);
     res.json({ sender });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const BULK_STATUS = { keep: 'KEPT', ignore: 'IGNORED', reset: 'ACTIVE' } as const;
+
+const bulkBody = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+  action: z.enum(['keep', 'ignore', 'reset', 'unsubscribe']),
+});
+
+router.post('/bulk', async (req, res, next) => {
+  try {
+    const { ids, action } = parse(bulkBody, req.body);
+    const userId = req.user!.id;
+    const unique = [...new Set(ids)];
+
+    const result =
+      action === 'unsubscribe'
+        ? await bulkUnsubscribe(userId, unique)
+        : await bulkSetStatus(userId, unique, BULK_STATUS[action]);
+    res.json(result);
   } catch (err) {
     next(err);
   }

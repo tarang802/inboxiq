@@ -1,6 +1,7 @@
 import { prisma } from '../lib/db';
 import type { Prisma, SenderStatus } from '../generated/prisma/client';
 import { badRequest, notFound } from '../utils/httpError';
+import { mapLimit } from '../utils/pool';
 import { sendOneClickUnsubscribe } from './unsubscribe';
 
 // everything the dashboard needs; userId and timestamps stay server side
@@ -79,7 +80,10 @@ export async function listSenders(userId: string, query: SenderQuery) {
 
 // scoped by userId so one user can never touch another user's sender
 export async function setSenderStatus(userId: string, id: string, status: SenderStatus) {
-  const { count } = await prisma.sender.updateMany({ where: { id, userId }, data: { status } });
+  const { count } = await prisma.sender.updateMany({
+    where: { id, userId },
+    data: { status, unsubscribedAt: null },
+  });
   if (!count) throw notFound('sender not found');
 
   return prisma.sender.findUniqueOrThrow({ where: { id }, select: senderSelect });
@@ -128,5 +132,47 @@ export async function senderSummary(userId: string) {
     unsubscribable,
     oneClick,
     statuses,
+  };
+}
+
+const BULK_CONCURRENCY = 4;
+
+export async function bulkSetStatus(userId: string, ids: string[], status: SenderStatus) {
+  const { count } = await prisma.sender.updateMany({
+    where: { userId, id: { in: ids } },
+    data: { status, unsubscribedAt: null },
+  });
+  return { updated: count };
+}
+
+// only one-click senders can be done in bulk; the rest need the user to click through
+export async function bulkUnsubscribe(userId: string, ids: string[]) {
+  const senders = await prisma.sender.findMany({
+    where: { userId, id: { in: ids }, oneClick: true, unsubscribeUrl: { not: null } },
+    select: { id: true, unsubscribeUrl: true },
+  });
+
+  const results = await mapLimit(senders, BULK_CONCURRENCY, async (s) => {
+    try {
+      await sendOneClickUnsubscribe(s.unsubscribeUrl!);
+      return { id: s.id, ok: true as const };
+    } catch (err) {
+      return { id: s.id, ok: false as const, error: err instanceof Error ? err.message : 'failed' };
+    }
+  });
+
+  const done = results.filter((r) => r.ok).map((r) => r.id);
+  if (done.length) {
+    await prisma.sender.updateMany({
+      where: { userId, id: { in: done } },
+      data: { status: 'UNSUBSCRIBED', unsubscribedAt: new Date() },
+    });
+  }
+
+  const tried = new Set(senders.map((s) => s.id));
+  return {
+    unsubscribed: done,
+    failed: results.flatMap((r) => (r.ok ? [] : [{ id: r.id, error: r.error }])),
+    skipped: ids.filter((id) => !tried.has(id)),
   };
 }
