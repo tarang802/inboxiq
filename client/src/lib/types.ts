@@ -49,3 +49,10 @@ export interface SenderSummary {
   oneClick: number;
   statuses: Record<SenderStatus, number>;
 }
+
+export interface Analytics {
+  topSenders: Pick<Sender, 'id' | 'email' | 'name' | 'messageCount' | 'status'>[];
+  topDomains: { domain: string; messages: number; senders: number }[];
+  unsubscribe: { oneClick: number; link: number; mail: number; none: number };
+  unsubscribed: { senders: number; emailsPerYear: number };
+}
