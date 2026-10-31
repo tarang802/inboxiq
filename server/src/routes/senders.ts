@@ -10,6 +10,12 @@ router.use(requireAuth);
 
 const listQuery = z.object({
   q: z.string().trim().max(200).optional(),
+  status: z.enum(['ACTIVE', 'KEPT', 'IGNORED', 'UNSUBSCRIBED']).optional(),
+  // query strings are text, so only the literal 'true' turns this on
+  unsubscribable: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
