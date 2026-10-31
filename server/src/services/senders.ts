@@ -17,17 +17,28 @@ export const senderSelect = {
   clutterScore: true,
 } satisfies Prisma.SenderSelect;
 
+export const SORTS = {
+  clutter: 'clutterScore',
+  count: 'messageCount',
+  recent: 'lastSeenAt',
+  name: 'email',
+} as const;
+
+export type SenderSort = keyof typeof SORTS;
+
 export interface SenderQuery {
   q?: string;
   status?: SenderStatus;
   // only senders we can unsubscribe from
   unsubscribable?: boolean;
+  sort: SenderSort;
+  order: 'asc' | 'desc';
   page: number;
   pageSize: number;
 }
 
 export async function listSenders(userId: string, query: SenderQuery) {
-  const { q, status, unsubscribable, page, pageSize } = query;
+  const { q, status, unsubscribable, sort, order, page, pageSize } = query;
   const where: Prisma.SenderWhereInput = { userId };
 
   if (status) where.status = status;
@@ -47,7 +58,8 @@ export async function listSenders(userId: string, query: SenderQuery) {
     prisma.sender.findMany({
       where,
       select: senderSelect,
-      orderBy: { messageCount: 'desc' },
+      // id breaks ties so rows don't jump between pages
+      orderBy: [{ [SORTS[sort]]: order }, { id: 'asc' }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

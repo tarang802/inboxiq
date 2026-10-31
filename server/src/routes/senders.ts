@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth';
-import { listSenders } from '../services/senders';
+import { SORTS, listSenders, type SenderSort } from '../services/senders';
 import { parse } from '../utils/validate';
 
 const router = Router();
@@ -16,6 +16,8 @@ const listQuery = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((v) => v === 'true'),
+  sort: z.enum(Object.keys(SORTS) as [SenderSort, ...SenderSort[]]).default('clutter'),
+  order: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
