@@ -18,6 +18,10 @@ export const senderSelect = {
   clutterScore: true,
 } satisfies Prisma.SenderSelect;
 
+const hasUnsubscribe: Prisma.SenderWhereInput = {
+  OR: [{ unsubscribeUrl: { not: null } }, { unsubscribeMail: { not: null } }],
+};
+
 export const SORTS = {
   clutter: 'clutterScore',
   count: 'messageCount',
@@ -44,7 +48,8 @@ export async function listSenders(userId: string, query: SenderQuery) {
 
   if (status) where.status = status;
   if (unsubscribable) {
-    where.AND = [{ OR: [{ unsubscribeUrl: { not: null } }, { unsubscribeMail: { not: null } }] }];
+    // AND so it doesn't clash with the search OR below
+    where.AND = [hasUnsubscribe];
   }
 
   if (q) {
@@ -76,4 +81,31 @@ export async function setSenderStatus(userId: string, id: string, status: Sender
   if (!count) throw notFound('sender not found');
 
   return prisma.sender.findUniqueOrThrow({ where: { id }, select: senderSelect });
+}
+
+export async function senderSummary(userId: string) {
+  const where = { userId };
+
+  const [totals, unsubscribable, oneClick, byStatus] = await prisma.$transaction([
+    prisma.sender.aggregate({ where, _count: true, _sum: { messageCount: true } }),
+    prisma.sender.count({ where: { ...where, ...hasUnsubscribe } }),
+    prisma.sender.count({ where: { ...where, oneClick: true } }),
+    prisma.sender.groupBy({ by: ['status'], where, _count: true, orderBy: { status: 'asc' } }),
+  ]);
+
+  const statuses: Record<SenderStatus, number> = {
+    ACTIVE: 0,
+    KEPT: 0,
+    IGNORED: 0,
+    UNSUBSCRIBED: 0,
+  };
+  for (const row of byStatus) statuses[row.status] = row._count as number;
+
+  return {
+    senders: totals._count,
+    messages: totals._sum.messageCount ?? 0,
+    unsubscribable,
+    oneClick,
+    statuses,
+  };
 }

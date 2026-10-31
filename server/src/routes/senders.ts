@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth';
-import { SORTS, listSenders, setSenderStatus, type SenderSort } from '../services/senders';
+import {
+  SORTS,
+  listSenders,
+  senderSummary,
+  setSenderStatus,
+  type SenderSort,
+} from '../services/senders';
 import { parse } from '../utils/validate';
 
 const router = Router();
@@ -26,6 +32,14 @@ router.get('/', async (req, res, next) => {
   try {
     const query = parse(listQuery, req.query);
     res.json(await listSenders(req.user!.id, query));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/summary', async (req, res, next) => {
+  try {
+    res.json({ summary: await senderSummary(req.user!.id) });
   } catch (err) {
     next(err);
   }
