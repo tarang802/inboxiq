@@ -1,19 +1,28 @@
 import { useSync } from '../hooks/useSync';
+import { formatCount, formatDateTime } from '../lib/format';
 
 // matches the server's error when the stored google token stops working
 const RECONNECT_REQUIRED = 'gmail_reconnect_required';
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+// gmail can't tell us up front how many emails a year holds, so the bar just moves
+function ProgressBar() {
+  return (
+    <div
+      className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-indigo-100"
+      role="progressbar"
+    >
+      <div className="h-full w-1/3 animate-[sync-slide_1.4s_ease-in-out_infinite] rounded-full bg-indigo-500" />
+    </div>
+  );
+}
 
-export default function SyncPanel() {
-  const { sync, error, active, starting, start } = useSync();
+export default function SyncPanel({ onDone }: { onDone?: () => void }) {
+  const { sync, error, active, starting, start } = useSync(onDone);
 
   let status = 'You have not synced yet.';
-  if (sync && active)
-    status = `Scanning your inbox… ${sync.processed.toLocaleString()} emails so far`;
+  if (sync && active) status = `Scanning your inbox… ${formatCount(sync.processed)} emails so far`;
   if (sync?.status === 'DONE' && sync.finishedAt) {
-    status = `Last synced ${formatTime(sync.finishedAt)} · ${sync.processed.toLocaleString()} emails scanned`;
+    status = `Last synced ${formatDateTime(sync.finishedAt)} · ${formatCount(sync.processed)} emails scanned`;
   }
   if (sync?.status === 'FAILED') status = 'The last sync failed. Try again in a minute.';
 
@@ -22,10 +31,11 @@ export default function SyncPanel() {
 
   return (
     <div className="mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+      <div className="sm:flex-1">
         <p className="font-medium">Inbox sync</p>
         <p className="mt-1 text-sm text-slate-600">{status}</p>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {active && <ProgressBar />}
       </div>
       {needsReconnect ? (
         <a

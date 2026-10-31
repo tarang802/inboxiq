@@ -3,3 +3,12 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+@keyframes sync-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
