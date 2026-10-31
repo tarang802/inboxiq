@@ -9,10 +9,10 @@ function describe(action: BulkAction, result: BulkResult) {
 
   const parts = [`Unsubscribed from ${plural(result.unsubscribed?.length ?? 0, 'sender')}.`];
   if (result.failed?.length) parts.push(`${result.failed.length} refused the request.`);
-  if (result.skipped?.length) {
-    parts.push(
-      `${plural(result.skipped.length, 'sender')} need a link or email, so do those one by one.`,
-    );
+  const skipped = result.skipped?.length ?? 0;
+  if (skipped) {
+    const who = skipped === 1 ? '1 sender needs' : `${skipped} senders need`;
+    parts.push(`${who} a link or email, so do those one by one.`);
   }
   return parts.join(' ');
 }
