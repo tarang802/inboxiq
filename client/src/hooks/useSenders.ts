@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listSenders, updateSenderStatus, type SenderParams } from '../lib/senders';
+import {
+  listSenders,
+  unsubscribeSender,
+  updateSenderStatus,
+  type SenderParams,
+} from '../lib/senders';
 import type { SenderPage, SenderStatus } from '../lib/types';
 
 const SEARCH_DELAY_MS = 300;
@@ -67,5 +72,12 @@ export function useSenders() {
     [],
   );
 
-  return { params, update, data, loading, error, reload, setStatus };
+  const unsubscribe = useCallback(async (id: string, confirm: boolean) => {
+    const sender = await unsubscribeSender(id, confirm);
+    setData(
+      (prev) => prev && { ...prev, senders: prev.senders.map((s) => (s.id === id ? sender : s)) },
+    );
+  }, []);
+
+  return { params, update, data, loading, error, reload, setStatus, unsubscribe };
 }

@@ -13,7 +13,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0];
 
-  const { params, update, data, loading, error, reload, setStatus } = useSenders();
+  const { params, update, data, loading, error, reload, setStatus, unsubscribe } = useSenders();
   const { summary, reload: reloadSummary } = useSenderSummary();
   const hasFilters = Boolean(params.q || params.status || params.unsubscribable);
 
@@ -28,6 +28,14 @@ export default function Dashboard() {
       reloadSummary();
     },
     [setStatus, reloadSummary],
+  );
+
+  const handleUnsubscribe = useCallback(
+    async (id: string, confirm: boolean) => {
+      await unsubscribe(id, confirm);
+      reloadSummary();
+    },
+    [unsubscribe, reloadSummary],
   );
 
   return (
@@ -61,7 +69,11 @@ export default function Dashboard() {
             className={`space-y-4 transition-opacity ${loading ? 'opacity-60' : ''}`}
             aria-busy={loading}
           >
-            <SenderTable senders={data.senders} onStatusChange={changeStatus} />
+            <SenderTable
+              senders={data.senders}
+              onStatusChange={changeStatus}
+              onUnsubscribe={handleUnsubscribe}
+            />
             <Pagination
               page={data.page}
               pageSize={data.pageSize}

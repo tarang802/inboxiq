@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatCount, timeAgo } from '../lib/format';
 import type { Sender, SenderStatus } from '../lib/types';
+import UnsubscribeAction from './UnsubscribeAction';
 
 type SettableStatus = Exclude<SenderStatus, 'UNSUBSCRIBED'>;
 
@@ -62,9 +63,10 @@ function ActionButton({ active, label, activeLabel, disabled, onClick }: ActionB
 interface Props {
   senders: Sender[];
   onStatusChange: (id: string, status: SettableStatus) => Promise<void>;
+  onUnsubscribe: (id: string, confirm: boolean) => Promise<void>;
 }
 
-export default function SenderTable({ senders, onStatusChange }: Props) {
+export default function SenderTable({ senders, onStatusChange, onUnsubscribe }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // clicking the active choice again puts the sender back to normal
@@ -117,7 +119,8 @@ export default function SenderTable({ senders, onStatusChange }: Props) {
                 {sender.status === 'UNSUBSCRIBED' ? (
                   <span className="text-xs text-slate-500">Unsubscribed</span>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex items-start gap-2">
+                    <UnsubscribeAction sender={sender} onUnsubscribe={onUnsubscribe} />
                     <ActionButton
                       label="Keep"
                       activeLabel="Kept"
