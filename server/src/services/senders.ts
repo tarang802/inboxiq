@@ -1,5 +1,6 @@
 import { prisma } from '../lib/db';
 import type { Prisma, SenderStatus } from '../generated/prisma/client';
+import { notFound } from '../utils/httpError';
 
 // everything the dashboard needs; userId and timestamps stay server side
 export const senderSelect = {
@@ -67,4 +68,12 @@ export async function listSenders(userId: string, query: SenderQuery) {
   ]);
 
   return { senders, total, page, pageSize };
+}
+
+// scoped by userId so one user can never touch another user's sender
+export async function setSenderStatus(userId: string, id: string, status: SenderStatus) {
+  const { count } = await prisma.sender.updateMany({ where: { id, userId }, data: { status } });
+  if (!count) throw notFound('sender not found');
+
+  return prisma.sender.findUniqueOrThrow({ where: { id }, select: senderSelect });
 }
