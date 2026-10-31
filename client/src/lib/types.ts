@@ -31,6 +31,7 @@ export interface Sender {
   unsubscribeMail: string | null;
   oneClick: boolean;
   status: SenderStatus;
+  unsubscribedAt: string | null;
   clutterScore: number;
 }
 

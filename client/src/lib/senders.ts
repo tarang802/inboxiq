@@ -36,3 +36,28 @@ export async function updateSenderStatus(
   });
   return sender;
 }
+
+// one-click senders are unsubscribed by the server; others need confirm once the user is done
+export async function unsubscribeSender(id: string, confirm = false) {
+  const { sender } = await api<{ sender: Sender }>(
+    `/senders/${encodeURIComponent(id)}/unsubscribe`,
+    { method: 'POST', body: JSON.stringify({ confirm }) },
+  );
+  return sender;
+}
+
+export type BulkAction = 'keep' | 'ignore' | 'reset' | 'unsubscribe';
+
+export interface BulkResult {
+  updated?: number;
+  unsubscribed?: string[];
+  failed?: { id: string; error: string }[];
+  skipped?: string[];
+}
+
+export function bulkAction(ids: string[], action: BulkAction) {
+  return api<BulkResult>('/senders/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ ids, action }),
+  });
+}
