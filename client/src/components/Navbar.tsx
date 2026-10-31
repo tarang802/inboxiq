@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import UserMenu from './UserMenu';
+
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  isActive ? 'font-medium text-slate-900' : 'hover:text-slate-900';
 
 export default function Navbar() {
   const { status } = useAuth();
@@ -14,9 +17,12 @@ export default function Navbar() {
         <div className="flex items-center gap-4 text-sm text-slate-600">
           {status === 'signed-in' && (
             <>
-              <Link to="/dashboard" className="hover:text-slate-900">
+              <NavLink to="/dashboard" className={navClass}>
                 Dashboard
-              </Link>
+              </NavLink>
+              <NavLink to="/insights" className={navClass}>
+                Insights
+              </NavLink>
               <UserMenu />
             </>
           )}
