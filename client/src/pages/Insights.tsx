@@ -27,7 +27,11 @@ export default function Insights() {
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!analytics) return <p className="py-12 text-center text-sm text-slate-500">Loading…</p>;
 
-  const { topSenders, topDomains, unsubscribed } = analytics;
+  const { topSenders, topDomains, unsubscribe, unsubscribed } = analytics;
+  const totalSenders =
+    unsubscribe.oneClick + unsubscribe.link + unsubscribe.mail + unsubscribe.none;
+  const canLeave = totalSenders - unsubscribe.none;
+  const share = (n: number) => (totalSenders ? `${Math.round((n / totalSenders) * 100)}%` : '');
 
   return (
     <div>
@@ -69,6 +73,29 @@ export default function Insights() {
             value: d.messages,
             detail: `${d.senders} ${d.senders === 1 ? 'sender' : 'senders'}`,
           }))}
+        />
+        <BarList
+          title={
+            totalSenders
+              ? `You can unsubscribe from ${share(canLeave)} of your senders`
+              : 'How you can unsubscribe'
+          }
+          unit="senders"
+          empty="Run a sync to see how you can unsubscribe."
+          items={
+            totalSenders
+              ? [
+                  {
+                    key: 'one-click',
+                    label: 'One click, done for you',
+                    value: unsubscribe.oneClick,
+                  },
+                  { key: 'link', label: 'Through the sender’s page', value: unsubscribe.link },
+                  { key: 'mail', label: 'By sending an email', value: unsubscribe.mail },
+                  { key: 'none', label: 'No unsubscribe option', value: unsubscribe.none },
+                ].map((item) => ({ ...item, sublabel: share(item.value) }))
+              : []
+          }
         />
       </div>
     </div>
