@@ -8,6 +8,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import meRouter from './routes/me';
 import syncRouter from './routes/sync';
+import sendersRouter from './routes/senders';
 import { loadSession } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
@@ -25,6 +26,7 @@ export function createApp() {
   app.use('/auth', authRouter);
   app.use('/me', meRouter);
   app.use('/sync', syncRouter);
+  app.use('/senders', sendersRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
