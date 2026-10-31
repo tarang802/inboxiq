@@ -22,7 +22,7 @@ export default function BarList({ title, items, unit, empty = 'Nothing to show y
   const max = Math.max(1, ...items.map((i) => i.value));
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5">
+    <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
       <h2 className="font-medium">{title}</h2>
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">{empty}</p>
