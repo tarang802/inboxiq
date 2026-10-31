@@ -6,6 +6,7 @@ import {
   listSenders,
   senderSummary,
   setSenderStatus,
+  unsubscribeSender,
   type SenderSort,
 } from '../services/senders';
 import { parse } from '../utils/validate';
@@ -52,6 +53,18 @@ router.patch('/:id', async (req, res, next) => {
   try {
     const { status } = parse(statusBody, req.body);
     const sender = await setSenderStatus(req.user!.id, req.params.id, status);
+    res.json({ sender });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const unsubscribeBody = z.object({ confirm: z.boolean().default(false) });
+
+router.post('/:id/unsubscribe', async (req, res, next) => {
+  try {
+    const { confirm } = parse(unsubscribeBody, req.body ?? {});
+    const sender = await unsubscribeSender(req.user!.id, req.params.id, confirm);
     res.json({ sender });
   } catch (err) {
     next(err);

@@ -1,6 +1,7 @@
 import { prisma } from '../lib/db';
 import type { Prisma, SenderStatus } from '../generated/prisma/client';
-import { notFound } from '../utils/httpError';
+import { badRequest, notFound } from '../utils/httpError';
+import { sendOneClickUnsubscribe } from './unsubscribe';
 
 // everything the dashboard needs; userId and timestamps stay server side
 export const senderSelect = {
@@ -15,6 +16,7 @@ export const senderSelect = {
   unsubscribeMail: true,
   oneClick: true,
   status: true,
+  unsubscribedAt: true,
   clutterScore: true,
 } satisfies Prisma.SenderSelect;
 
@@ -81,6 +83,25 @@ export async function setSenderStatus(userId: string, id: string, status: Sender
   if (!count) throw notFound('sender not found');
 
   return prisma.sender.findUniqueOrThrow({ where: { id }, select: senderSelect });
+}
+
+// one-click senders get unsubscribed right here. link and email senders have to be
+// done by the user in another tab, so `confirmed` records it once they say it worked
+export async function unsubscribeSender(userId: string, id: string, confirmed: boolean) {
+  const sender = await prisma.sender.findFirst({ where: { id, userId }, select: senderSelect });
+  if (!sender) throw notFound('sender not found');
+
+  if (sender.oneClick && sender.unsubscribeUrl) {
+    await sendOneClickUnsubscribe(sender.unsubscribeUrl);
+  } else if (!confirmed) {
+    throw badRequest('this sender needs you to unsubscribe through their link or email first');
+  }
+
+  return prisma.sender.update({
+    where: { id },
+    data: { status: 'UNSUBSCRIBED', unsubscribedAt: new Date() },
+    select: senderSelect,
+  });
 }
 
 export async function senderSummary(userId: string) {
