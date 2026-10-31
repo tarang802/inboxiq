@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { formatCount, timeAgo } from '../lib/format';
-import type { Sender } from '../lib/types';
+import type { Sender, SenderStatus } from '../lib/types';
+
+type SettableStatus = Exclude<SenderStatus, 'UNSUBSCRIBED'>;
 
 function UnsubscribeBadge({ sender }: { sender: Sender }) {
   let label = 'None';
@@ -32,11 +35,50 @@ function ClutterBar({ score }: { score: number }) {
   );
 }
 
-interface Props {
-  senders: Sender[];
+interface ActionButtonProps {
+  active: boolean;
+  label: string;
+  activeLabel: string;
+  disabled: boolean;
+  onClick: () => void;
 }
 
-export default function SenderTable({ senders }: Props) {
+function ActionButton({ active, label, activeLabel, disabled, onClick }: ActionButtonProps) {
+  const style = active
+    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+    : 'border-slate-200 text-slate-600 hover:bg-slate-100';
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-md border px-2 py-1 text-xs font-medium disabled:opacity-50 ${style}`}
+    >
+      {active ? activeLabel : label}
+    </button>
+  );
+}
+
+interface Props {
+  senders: Sender[];
+  onStatusChange: (id: string, status: SettableStatus) => Promise<void>;
+}
+
+export default function SenderTable({ senders, onStatusChange }: Props) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  // clicking the active choice again puts the sender back to normal
+  async function toggle(sender: Sender, status: SettableStatus) {
+    setBusyId(sender.id);
+    try {
+      await onStatusChange(sender.id, sender.status === status ? 'ACTIVE' : status);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-left text-sm">
@@ -47,6 +89,9 @@ export default function SenderTable({ senders }: Props) {
             <th className="px-4 py-3 font-medium">Last email</th>
             <th className="px-4 py-3 font-medium">Unsubscribe</th>
             <th className="px-4 py-3 font-medium">Clutter</th>
+            <th className="px-4 py-3 font-medium">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -67,6 +112,28 @@ export default function SenderTable({ senders }: Props) {
               </td>
               <td className="px-4 py-3">
                 <ClutterBar score={sender.clutterScore} />
+              </td>
+              <td className="whitespace-nowrap px-4 py-3">
+                {sender.status === 'UNSUBSCRIBED' ? (
+                  <span className="text-xs text-slate-500">Unsubscribed</span>
+                ) : (
+                  <div className="flex gap-2">
+                    <ActionButton
+                      label="Keep"
+                      activeLabel="Kept"
+                      active={sender.status === 'KEPT'}
+                      disabled={busyId === sender.id}
+                      onClick={() => toggle(sender, 'KEPT')}
+                    />
+                    <ActionButton
+                      label="Ignore"
+                      activeLabel="Ignored"
+                      active={sender.status === 'IGNORED'}
+                      disabled={busyId === sender.id}
+                      onClick={() => toggle(sender, 'IGNORED')}
+                    />
+                  </div>
+                )}
               </td>
             </tr>
           ))}
