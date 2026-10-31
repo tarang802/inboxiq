@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSenders } from '../hooks/useSenders';
 import { useSenderSummary } from '../hooks/useSenderSummary';
+import BulkActions from '../components/BulkActions';
 import Pagination from '../components/Pagination';
 import SenderFilters from '../components/SenderFilters';
 import SenderTable from '../components/SenderTable';
@@ -21,10 +22,17 @@ export default function Dashboard() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   useEffect(() => setSelected(new Set()), [params]);
 
+  const selectedSenders = data?.senders.filter((s) => selected.has(s.id)) ?? [];
+
   const refresh = useCallback(() => {
     reload();
     reloadSummary();
   }, [reload, reloadSummary]);
+
+  const afterBulk = useCallback(() => {
+    setSelected(new Set());
+    refresh();
+  }, [refresh]);
 
   const changeStatus = useCallback(
     async (id: string, status: Exclude<SenderStatus, 'UNSUBSCRIBED'>) => {
@@ -52,6 +60,11 @@ export default function Dashboard() {
 
       <section className="mt-8 space-y-4">
         <SenderFilters params={params} onChange={update} />
+        <BulkActions
+          senders={selectedSenders}
+          onDone={afterBulk}
+          onClear={() => setSelected(new Set())}
+        />
         {error && <p className="text-sm text-red-600">{error}</p>}
         {!data && !error && <p className="py-12 text-center text-sm text-slate-500">Loading…</p>}
         {data && data.total === 0 && (
