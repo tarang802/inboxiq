@@ -1,4 +1,5 @@
 import { prisma } from '../lib/db';
+import { clutterScore } from '../lib/clutter';
 import type { SenderAggregate } from './senderAggregator';
 
 const CHUNK_SIZE = 100;
@@ -20,6 +21,7 @@ export async function saveSenders(userId: string, senders: SenderAggregate[]) {
           unsubscribeUrl: s.unsubscribeUrl,
           unsubscribeMail: s.unsubscribeMail,
           oneClick: s.oneClick,
+          clutterScore: clutterScore(s),
         };
 
         return prisma.sender.upsert({
