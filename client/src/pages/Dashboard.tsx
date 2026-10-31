@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSenders } from '../hooks/useSenders';
 import { useSenderSummary } from '../hooks/useSenderSummary';
@@ -16,6 +16,10 @@ export default function Dashboard() {
   const { params, update, data, loading, error, reload, setStatus, unsubscribe } = useSenders();
   const { summary, reload: reloadSummary } = useSenderSummary();
   const hasFilters = Boolean(params.q || params.status || params.unsubscribable);
+
+  // a new page or filter means a new set of rows, so start the selection over
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  useEffect(() => setSelected(new Set()), [params]);
 
   const refresh = useCallback(() => {
     reload();
@@ -73,6 +77,8 @@ export default function Dashboard() {
               senders={data.senders}
               onStatusChange={changeStatus}
               onUnsubscribe={handleUnsubscribe}
+              selected={selected}
+              onSelectionChange={setSelected}
             />
             <Pagination
               page={data.page}

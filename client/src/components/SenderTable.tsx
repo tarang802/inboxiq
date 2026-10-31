@@ -64,10 +64,33 @@ interface Props {
   senders: Sender[];
   onStatusChange: (id: string, status: SettableStatus) => Promise<void>;
   onUnsubscribe: (id: string, confirm: boolean) => Promise<void>;
+  selected: Set<string>;
+  onSelectionChange: (selected: Set<string>) => void;
 }
 
-export default function SenderTable({ senders, onStatusChange, onUnsubscribe }: Props) {
+export default function SenderTable({
+  senders,
+  onStatusChange,
+  onUnsubscribe,
+  selected,
+  onSelectionChange,
+}: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const allSelected = senders.length > 0 && senders.every((s) => selected.has(s.id));
+  const someSelected = !allSelected && senders.some((s) => selected.has(s.id));
+
+  function toggleRow(id: string) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange(next);
+  }
+
+  // header checkbox works on the visible page only
+  function toggleAll() {
+    onSelectionChange(allSelected ? new Set() : new Set(senders.map((s) => s.id)));
+  }
 
   // clicking the active choice again puts the sender back to normal
   async function toggle(sender: Sender, status: SettableStatus) {
@@ -86,6 +109,18 @@ export default function SenderTable({ senders, onStatusChange, onUnsubscribe }: 
       <table className="w-full text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
+            <th className="w-10 py-3 pl-4">
+              <input
+                type="checkbox"
+                aria-label="Select all senders on this page"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = someSelected;
+                }}
+                onChange={toggleAll}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+              />
+            </th>
             <th className="px-4 py-3 font-medium">Sender</th>
             <th className="px-4 py-3 text-right font-medium">Emails</th>
             <th className="px-4 py-3 font-medium">Last email</th>
@@ -98,7 +133,19 @@ export default function SenderTable({ senders, onStatusChange, onUnsubscribe }: 
         </thead>
         <tbody className="divide-y divide-slate-100">
           {senders.map((sender) => (
-            <tr key={sender.id} className="hover:bg-slate-50">
+            <tr
+              key={sender.id}
+              className={selected.has(sender.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}
+            >
+              <td className="py-3 pl-4">
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${sender.name ?? sender.email}`}
+                  checked={selected.has(sender.id)}
+                  onChange={() => toggleRow(sender.id)}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                />
+              </td>
               <td className="max-w-xs px-4 py-3">
                 <p className="truncate font-medium">{sender.name ?? sender.email}</p>
                 {sender.name && <p className="truncate text-xs text-slate-500">{sender.email}</p>}
