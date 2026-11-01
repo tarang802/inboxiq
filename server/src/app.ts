@@ -20,7 +20,8 @@ export function createApp() {
 
   app.use(helmet());
   app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
-  app.use(express.json());
+  // every body we accept is a few ids or flags
+  app.use(express.json({ limit: '20kb' }));
   app.use(cookieParser());
   if (env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
