@@ -55,7 +55,7 @@ export default function Dashboard() {
       <h1 className="text-2xl font-semibold">{firstName ? `Hi, ${firstName}` : 'Dashboard'}</h1>
       <p className="mt-2 text-slate-600">See who sends you the most mail and decide who stays.</p>
 
-      <SyncPanel onDone={refresh} />
+      <SyncPanel onDone={refresh} onProgress={refresh} />
       <SummaryCards summary={summary} />
 
       <section className="mt-8 space-y-4">

@@ -8,17 +8,21 @@ const message = (err: unknown) => (err instanceof Error ? err.message : 'somethi
 
 const isActive = (status?: SyncStatus) => status === 'QUEUED' || status === 'RUNNING';
 
-// onDone fires when a sync we watched running finishes, so the page can reload its data
-export function useSync(onDone?: () => void) {
+// onDone fires when a sync we watched running finishes, so the page can reload its data.
+// onProgress fires as a running sync gets further, since a first sync saves as it goes
+export function useSync(onDone?: () => void, onProgress?: () => void) {
   const [sync, setSync] = useState<SyncRun | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
 
   const onDoneRef = useRef(onDone);
+  const onProgressRef = useRef(onProgress);
   const lastStatus = useRef<SyncStatus | undefined>(undefined);
+  const lastProcessed = useRef(0);
 
   useEffect(() => {
     onDoneRef.current = onDone;
+    onProgressRef.current = onProgress;
   });
 
   useEffect(() => {
@@ -26,6 +30,13 @@ export function useSync(onDone?: () => void) {
     lastStatus.current = sync?.status;
     if (isActive(was) && sync?.status === 'DONE') onDoneRef.current?.();
   }, [sync?.status]);
+
+  useEffect(() => {
+    const processed = sync?.processed ?? 0;
+    const grew = processed > lastProcessed.current;
+    lastProcessed.current = processed;
+    if (grew && sync?.status === 'RUNNING') onProgressRef.current?.();
+  }, [sync?.processed, sync?.status]);
 
   const load = useCallback(async () => {
     try {

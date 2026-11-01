@@ -18,8 +18,14 @@ function ProgressBar() {
   );
 }
 
-export default function SyncPanel({ onDone }: { onDone?: () => void }) {
-  const { sync, error, active, starting, start } = useSync(onDone);
+export default function SyncPanel({
+  onDone,
+  onProgress,
+}: {
+  onDone?: () => void;
+  onProgress?: () => void;
+}) {
+  const { sync, error, active, starting, start } = useSync(onDone, onProgress);
   const { gmailConnected, refresh } = useAuth();
 
   let status = 'You have not synced yet.';
