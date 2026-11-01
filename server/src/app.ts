@@ -18,7 +18,20 @@ export function createApp() {
   const app = express();
   app.set('trust proxy', env.TRUST_PROXY);
 
-  app.use(helmet());
+  // the api only ever returns json and redirects, so the page may load nothing at all
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: {
+          defaultSrc: ["'none'"],
+          baseUri: ["'none'"],
+          formAction: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+    }),
+  );
   app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
   // every body we accept is a few ids or flags
   app.use(express.json({ limit: '20kb' }));
