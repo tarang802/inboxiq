@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth';
+import { unsubscribeLimiter } from '../middleware/rateLimit';
 import {
   SORTS,
   bulkSetStatus,
@@ -48,13 +49,22 @@ router.get('/summary', async (req, res, next) => {
   }
 });
 
+// ids are cuids; anything else is a typo or someone poking at the api
+const idParams = z.object({
+  id: z
+    .string()
+    .max(40)
+    .regex(/^[a-z0-9]+$/i, 'invalid sender id'),
+});
+
 // unsubscribing has its own flow, so only these can be set by hand
 const statusBody = z.object({ status: z.enum(['ACTIVE', 'KEPT', 'IGNORED']) });
 
 router.patch('/:id', async (req, res, next) => {
   try {
+    const { id } = parse(idParams, req.params);
     const { status } = parse(statusBody, req.body);
-    const sender = await setSenderStatus(req.user!.id, req.params.id, status);
+    const sender = await setSenderStatus(req.user!.id, id, status);
     res.json({ sender });
   } catch (err) {
     next(err);
@@ -64,11 +74,11 @@ router.patch('/:id', async (req, res, next) => {
 const BULK_STATUS = { keep: 'KEPT', ignore: 'IGNORED', reset: 'ACTIVE' } as const;
 
 const bulkBody = z.object({
-  ids: z.array(z.string().min(1)).min(1).max(100),
+  ids: z.array(idParams.shape.id).min(1).max(100),
   action: z.enum(['keep', 'ignore', 'reset', 'unsubscribe']),
 });
 
-router.post('/bulk', async (req, res, next) => {
+router.post('/bulk', unsubscribeLimiter, async (req, res, next) => {
   try {
     const { ids, action } = parse(bulkBody, req.body);
     const userId = req.user!.id;
@@ -86,10 +96,11 @@ router.post('/bulk', async (req, res, next) => {
 
 const unsubscribeBody = z.object({ confirm: z.boolean().default(false) });
 
-router.post('/:id/unsubscribe', async (req, res, next) => {
+router.post('/:id/unsubscribe', unsubscribeLimiter, async (req, res, next) => {
   try {
+    const { id } = parse(idParams, req.params);
     const { confirm } = parse(unsubscribeBody, req.body ?? {});
-    const sender = await unsubscribeSender(req.user!.id, req.params.id, confirm);
+    const sender = await unsubscribeSender(req.user!.id, id, confirm);
     res.json({ sender });
   } catch (err) {
     next(err);
