@@ -5,6 +5,8 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(4000),
   CLIENT_URL: z.string().url().default('http://localhost:5173'),
+  // how many proxies sit in front of the app, so rate limits see the real client ip
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   DATABASE_URL: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
