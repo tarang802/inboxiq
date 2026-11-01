@@ -98,8 +98,9 @@ async function readError(res: Response) {
   return { reason, retryAfterMs: fromHeader ?? quotaResetMs(body?.error?.details) };
 }
 
-// list and get both cost 5 units. stay under 90% of the per-user minute budget,
-// spread evenly, so parallel workers never trip the limit in the first place
+// google documents list and get at 5 units, but metadata reads are billed nearer 20.
+// pacing at the documented cost smooths out bursts; the real cap is the quota window,
+// which readError's reset wait handles without burning retries
 const UNITS_PER_REQUEST = 5;
 const unitsPerSecond = () => (env.GMAIL_UNITS_PER_MINUTE * 0.9) / 60;
 
@@ -156,8 +157,8 @@ export function createGmailClient(userId: string) {
 
   return {
     // the metadata scope doesn't allow the q param, so this pages through everything
-    async listMessages(pageToken?: string) {
-      const params = new URLSearchParams({ maxResults: '500' });
+    async listMessages(pageToken?: string, maxResults = 500) {
+      const params = new URLSearchParams({ maxResults: String(maxResults) });
       if (pageToken) params.set('pageToken', pageToken);
 
       const data = await request<ListResponse>('/messages', params);

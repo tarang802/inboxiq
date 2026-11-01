@@ -6,9 +6,13 @@ import { createGmailClient } from './gmail';
 import { SenderAggregator } from './senderAggregator';
 import { saveSenders } from './senderStore';
 
-// each metadata read takes up to a second, so 8 in flight left most of the quota unused.
-// the gmail client's rate limiter is what keeps this under google's per-user limit
+// google bills a metadata read at about 20 units against a 6000/min per-user quota,
+// so a scan tops out near 5 emails a second no matter how many are in flight
 const CONCURRENCY = 16;
+
+// a small first page gets something on screen quickly
+const FIRST_PAGE_SIZE = 100;
+const PAGE_SIZE = 500;
 
 // big inboxes take a long time to scan, so only look at the last year
 const WINDOW_MS = 365 * 24 * 60 * 60 * 1000;
@@ -33,11 +37,12 @@ async function runSync(runId: string, user: SyncUser) {
     const gmail = createGmailClient(user.id);
     const senders = new SenderAggregator(user.email);
     const since = Date.now() - WINDOW_MS;
+    const firstSync = (await prisma.sender.count({ where: { userId: user.id } })) === 0;
     let processed = 0;
     let pageToken: string | undefined;
 
     do {
-      const page = await gmail.listMessages(pageToken);
+      const page = await gmail.listMessages(pageToken, pageToken ? PAGE_SIZE : FIRST_PAGE_SIZE);
       const messages = await mapLimit(page.ids, CONCURRENCY, (id) => gmail.getMessage(id));
 
       let oldest = Infinity;
@@ -46,6 +51,10 @@ async function runSync(runId: string, user: SyncUser) {
         oldest = Math.min(oldest, msg.internalDate);
         if (msg.internalDate >= since) senders.add(msg);
       }
+
+      // a first sync has nothing to show, so publish senders as they come in.
+      // a resync leaves the old counts up until the new ones are complete
+      if (firstSync) await saveSenders(user.id, senders.values());
 
       processed += page.ids.length;
       await prisma.syncRun.update({ where: { id: runId }, data: { processed } });
