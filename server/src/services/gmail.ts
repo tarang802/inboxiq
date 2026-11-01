@@ -126,6 +126,10 @@ export function createGmailClient(userId: string) {
         return res.json() as Promise<T>;
       },
       {
+        // google's quota is a per-minute window, so give it up to a couple of minutes to recover
+        retries: 7,
+        baseMs: 1000,
+        maxMs: 60_000,
         shouldRetry: isRetryable,
         delayFor: (err) => (err instanceof GmailError ? err.retryAfterMs : undefined),
       },
