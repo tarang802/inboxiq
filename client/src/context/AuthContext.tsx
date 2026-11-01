@@ -11,6 +11,7 @@ interface AuthState {
   gmailConnected: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -39,12 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signed-out');
   }, []);
 
+  // the server removes everything and clears the session cookie
+  const deleteAccount = useCallback(async () => {
+    await api('/me', { method: 'DELETE' });
+    setUser(null);
+    setStatus('signed-out');
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   return (
-    <AuthContext.Provider value={{ user, status, gmailConnected, refresh, logout }}>
+    <AuthContext.Provider value={{ user, status, gmailConnected, refresh, logout, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );
