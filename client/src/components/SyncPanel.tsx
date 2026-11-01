@@ -10,7 +10,7 @@ const RECONNECT_REQUIRED = 'gmail_reconnect_required';
 function ProgressBar() {
   return (
     <div
-      className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-indigo-100"
+      className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-500/20"
       role="progressbar"
     >
       <div className="h-full w-1/3 animate-[sync-slide_1.4s_ease-in-out_infinite] rounded-full bg-indigo-500" />
@@ -47,11 +47,11 @@ export default function SyncPanel({
   }, [failedOnToken, gmailConnected, refresh]);
 
   return (
-    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="sm:flex-1">
         <p className="font-medium">Inbox sync</p>
-        <p className="mt-1 text-sm text-slate-600">{status}</p>
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{status}</p>
+        {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
         {active && <ProgressBar />}
       </div>
       {needsReconnect ? (

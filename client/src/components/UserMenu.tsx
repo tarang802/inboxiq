@@ -26,15 +26,21 @@ export default function UserMenu() {
             className="h-8 w-8 rounded-full"
           />
         ) : (
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-sm font-medium text-indigo-700 dark:text-indigo-300">
             {initial}
           </span>
         )}
       </Link>
-      <Link to="/account" className="hidden text-slate-700 hover:text-slate-900 sm:inline">
+      <Link
+        to="/account"
+        className="hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 sm:inline"
+      >
         {user.name ?? user.email}
       </Link>
-      <button onClick={handleLogout} className="text-slate-500 hover:text-slate-900">
+      <button
+        onClick={handleLogout}
+        className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+      >
         Log out
       </button>
     </div>

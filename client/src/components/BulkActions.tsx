@@ -49,10 +49,10 @@ export default function BulkActions({ senders, onDone, onClear }: Props) {
   }
 
   const button =
-    'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50';
+    'rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:opacity-50';
 
   return (
-    <div className="sticky top-2 z-10 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 shadow-sm">
+    <div className="sticky top-2 z-10 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 shadow-sm">
       {senders.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-2 text-sm font-medium">
@@ -75,15 +75,21 @@ export default function BulkActions({ senders, onDone, onClear }: Props) {
           >
             {busy === 'unsubscribe' ? 'Unsubscribing…' : `Unsubscribe from ${oneClick} (one-click)`}
           </button>
-          <button className="ml-auto text-sm text-slate-600 hover:underline" onClick={onClear}>
+          <button
+            className="ml-auto text-sm text-slate-600 dark:text-slate-400 hover:underline"
+            onClick={onClear}
+          >
             Clear
           </button>
         </div>
       )}
       {message && (
-        <div className="flex items-start justify-between gap-3 text-sm text-slate-700 [&:not(:first-child)]:mt-2">
+        <div className="flex items-start justify-between gap-3 text-sm text-slate-700 dark:text-slate-300 [&:not(:first-child)]:mt-2">
           <p>{message}</p>
-          <button className="text-slate-500 hover:underline" onClick={() => setMessage(null)}>
+          <button
+            className="text-slate-500 dark:text-slate-400 hover:underline"
+            onClick={() => setMessage(null)}
+          >
             Dismiss
           </button>
         </div>

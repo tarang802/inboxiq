@@ -7,31 +7,34 @@ type SettableStatus = Exclude<SenderStatus, 'UNSUBSCRIBED'>;
 
 function UnsubscribeBadge({ sender }: { sender: Sender }) {
   let label = 'None';
-  let style = 'bg-slate-100 text-slate-500';
+  let style = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
 
   if (sender.oneClick) {
     label = 'One-click';
-    style = 'bg-emerald-50 text-emerald-700';
+    style = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
   } else if (sender.unsubscribeUrl) {
     label = 'Link';
-    style = 'bg-sky-50 text-sky-700';
+    style = 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300';
   } else if (sender.unsubscribeMail) {
     label = 'Email';
-    style = 'bg-amber-50 text-amber-700';
+    style = 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300';
   }
 
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>{label}</span>;
 }
 
 function ClutterBar({ score }: { score: number }) {
-  const color = score >= 70 ? 'bg-red-500' : score >= 40 ? 'bg-amber-500' : 'bg-slate-400';
+  const color =
+    score >= 70 ? 'bg-red-500' : score >= 40 ? 'bg-amber-500' : 'bg-slate-400 dark:bg-slate-600';
 
   return (
     <div className="flex items-center gap-2" title={`Clutter score ${score} of 100`}>
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
         <div className={`h-full ${color}`} style={{ width: `${score}%` }} />
       </div>
-      <span className="w-6 text-right text-xs tabular-nums text-slate-600">{score}</span>
+      <span className="w-6 text-right text-xs tabular-nums text-slate-600 dark:text-slate-400">
+        {score}
+      </span>
     </div>
   );
 }
@@ -46,8 +49,8 @@ interface ActionButtonProps {
 
 function ActionButton({ active, label, activeLabel, disabled, onClick }: ActionButtonProps) {
   const style = active
-    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-    : 'border-slate-200 text-slate-600 hover:bg-slate-100';
+    ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800';
 
   return (
     <button
@@ -105,9 +108,9 @@ export default function SenderTable({
   }
 
   return (
-    <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <div className="relative overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
           <tr>
             <th className="w-10 py-3 pl-4">
               <input
@@ -118,7 +121,7 @@ export default function SenderTable({
                   if (el) el.indeterminate = someSelected;
                 }}
                 onChange={toggleAll}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
               />
             </th>
             <th className="px-4 py-3 font-medium">Sender</th>
@@ -131,11 +134,15 @@ export default function SenderTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {senders.map((sender) => (
             <tr
               key={sender.id}
-              className={selected.has(sender.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}
+              className={
+                selected.has(sender.id)
+                  ? 'bg-indigo-50/50 dark:bg-indigo-500/10'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              }
             >
               <td className="py-3 pl-4">
                 <input
@@ -143,17 +150,21 @@ export default function SenderTable({
                   aria-label={`Select ${sender.name ?? sender.email}`}
                   checked={selected.has(sender.id)}
                   onChange={() => toggleRow(sender.id)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
                 />
               </td>
               <td className="max-w-xs px-4 py-3">
                 <p className="truncate font-medium">{sender.name ?? sender.email}</p>
-                {sender.name && <p className="truncate text-xs text-slate-500">{sender.email}</p>}
+                {sender.name && (
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {sender.email}
+                  </p>
+                )}
               </td>
               <td className="px-4 py-3 text-right tabular-nums">
                 {formatCount(sender.messageCount)}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+              <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-400">
                 {timeAgo(sender.lastSeenAt)}
               </td>
               <td className="px-4 py-3">
@@ -164,7 +175,7 @@ export default function SenderTable({
               </td>
               <td className="whitespace-nowrap px-4 py-3">
                 {sender.status === 'UNSUBSCRIBED' ? (
-                  <span className="text-xs text-slate-500">Unsubscribed</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Unsubscribed</span>
                 ) : (
                   <div className="flex items-start gap-2">
                     <UnsubscribeAction sender={sender} onUnsubscribe={onUnsubscribe} />

@@ -18,7 +18,7 @@ interface Props {
 }
 
 const button =
-  'rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50';
+  'rounded-md border border-red-200 dark:border-red-500/30 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50';
 
 export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
   const [busy, setBusy] = useState(false);
@@ -44,7 +44,9 @@ export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
           {busy ? 'Unsubscribing…' : 'Unsubscribe'}
         </button>
         {error && (
-          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600">{error}</span>
+          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600 dark:text-red-400">
+            {error}
+          </span>
         )}
       </span>
     );
@@ -61,7 +63,9 @@ export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
           {busy ? 'Saving…' : 'Done? Mark it'}
         </button>
         {error && (
-          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600">{error}</span>
+          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600 dark:text-red-400">
+            {error}
+          </span>
         )}
       </span>
     );

@@ -17,7 +17,7 @@ const STATUS_OPTIONS: { value: SenderStatus | ''; label: string }[] = [
 ];
 
 const field =
-  'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+  'rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
 interface Props {
   params: SenderParams;
@@ -62,12 +62,12 @@ export default function SenderFilters({ params, onChange }: Props) {
           </option>
         ))}
       </select>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
         <input
           type="checkbox"
           checked={params.unsubscribable ?? false}
           onChange={(e) => onChange({ unsubscribable: e.target.checked })}
-          className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+          className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
         />
         Can unsubscribe
       </label>

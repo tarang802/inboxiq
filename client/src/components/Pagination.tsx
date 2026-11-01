@@ -13,10 +13,10 @@ export default function Pagination({ page, pageSize, total, onPage }: Props) {
   const to = Math.min(total, page * pageSize);
 
   const button =
-    'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
+    'rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
-    <div className="flex items-center justify-between text-sm text-slate-600">
+    <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
       <p>
         {formatCount(from)}–{formatCount(to)} of {formatCount(total)}
       </p>
