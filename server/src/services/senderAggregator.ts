@@ -78,6 +78,11 @@ export class SenderAggregator {
     return true;
   }
 
+  // start from senders already saved, so new mail adds to their counts
+  seed(existing: SenderAggregate[]) {
+    for (const s of existing) this.senders.set(s.email, { ...s });
+  }
+
   get size() {
     return this.senders.size;
   }

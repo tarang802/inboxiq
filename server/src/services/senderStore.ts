@@ -19,7 +19,23 @@ function row(userId: string, s: SenderAggregate) {
   )`;
 }
 
-// each sync rescans the whole window, so counts are replaced, not added to.
+export async function loadSenders(userId: string, emails: string[]): Promise<SenderAggregate[]> {
+  const rows = await prisma.sender.findMany({ where: { userId, email: { in: emails } } });
+  return rows.map((r) => ({
+    email: r.email,
+    name: r.name,
+    domain: r.domain,
+    count: r.messageCount,
+    firstSeen: r.firstSeenAt,
+    lastSeen: r.lastSeenAt,
+    unsubscribeUrl: r.unsubscribeUrl,
+    unsubscribeMail: r.unsubscribeMail,
+    oneClick: r.oneClick,
+  }));
+}
+
+// counts are replaced, not added to: a full scan has the whole window,
+// and a catch-up sync merges new mail into the saved totals first.
 // status is left alone so keep/ignore choices survive a resync.
 // one statement per chunk: an upsert per sender is a round trip each,
 // and a big inbox blew through prisma's transaction timeout
