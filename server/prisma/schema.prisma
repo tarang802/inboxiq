@@ -40,6 +40,9 @@ model GoogleAccount {
   encryptedRefreshToken String
   scopes                String
   tokenValid            Boolean  @default(true)
+  // where the next sync picks up from, so it only reads new mail
+  historyId             String?
+  fullSyncAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

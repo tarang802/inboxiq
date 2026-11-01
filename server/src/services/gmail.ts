@@ -39,6 +39,12 @@ interface ListResponse {
   nextPageToken?: string;
 }
 
+interface HistoryResponse {
+  history?: { messagesAdded?: { message: { id: string } }[] }[];
+  nextPageToken?: string;
+  historyId?: string;
+}
+
 interface RawMessage {
   id: string;
   labelIds?: string[];
@@ -163,6 +169,34 @@ export function createGmailClient(userId: string) {
 
       const data = await request<ListResponse>('/messages', params);
       return { ids: (data.messages ?? []).map((m) => m.id), nextPageToken: data.nextPageToken };
+    },
+
+    // the mailbox's current position in its change history
+    async getHistoryId() {
+      const data = await request<{ historyId: string }>('/profile', new URLSearchParams());
+      return data.historyId;
+    },
+
+    // ids of mail added since startHistoryId. null when that point is too old,
+    // since gmail only keeps about a week of history
+    async listNewMessages(startHistoryId: string, pageToken?: string) {
+      const params = new URLSearchParams({
+        startHistoryId,
+        historyTypes: 'messageAdded',
+        maxResults: '500',
+      });
+      if (pageToken) params.set('pageToken', pageToken);
+
+      try {
+        const data = await request<HistoryResponse>('/history', params);
+        const ids = (data.history ?? [])
+          .flatMap((h) => h.messagesAdded ?? [])
+          .map((a) => a.message.id);
+        return { ids, nextPageToken: data.nextPageToken, historyId: data.historyId };
+      } catch (err) {
+        if (err instanceof GmailError && err.gmailStatus === 404) return null;
+        throw err;
+      }
     },
 
     // returns null if the message was deleted after it was listed
