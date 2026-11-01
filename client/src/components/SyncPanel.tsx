@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useSync } from '../hooks/useSync';
 import { formatCount, formatDateTime } from '../lib/format';
 
@@ -18,6 +20,7 @@ function ProgressBar() {
 
 export default function SyncPanel({ onDone }: { onDone?: () => void }) {
   const { sync, error, active, starting, start } = useSync(onDone);
+  const { gmailConnected, refresh } = useAuth();
 
   let status = 'You have not synced yet.';
   if (sync && active) status = `Scanning your inbox… ${formatCount(sync.processed)} emails so far`;
@@ -26,8 +29,16 @@ export default function SyncPanel({ onDone }: { onDone?: () => void }) {
   }
   if (sync?.status === 'FAILED') status = 'The last sync failed. Try again in a minute.';
 
-  const needsReconnect = sync?.status === 'FAILED' && sync.error === RECONNECT_REQUIRED;
+  // once the user reconnects, the old failed run shouldn't keep asking them to
+  const failedOnToken = sync?.status === 'FAILED' && sync.error === RECONNECT_REQUIRED;
+  const needsReconnect = failedOnToken && !gmailConnected;
   if (needsReconnect) status = 'Your Gmail connection expired.';
+  else if (failedOnToken) status = 'Gmail is connected again. Run a sync to catch up.';
+
+  // a sync can be the first thing to notice the token died, so update the banner too
+  useEffect(() => {
+    if (failedOnToken && gmailConnected) refresh();
+  }, [failedOnToken, gmailConnected, refresh]);
 
   return (
     <div className="mt-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
