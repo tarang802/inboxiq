@@ -7,6 +7,8 @@ type Status = 'loading' | 'signed-in' | 'signed-out';
 interface AuthState {
   user: User | null;
   status: Status;
+  // false when google has revoked or expired our access
+  gmailConnected: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -16,11 +18,13 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<Status>('loading');
+  const [gmailConnected, setGmailConnected] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const { user } = await api<{ user: User }>('/me');
+      const { user, gmailConnected } = await api<{ user: User; gmailConnected: boolean }>('/me');
       setUser(user);
+      setGmailConnected(gmailConnected);
       setStatus('signed-in');
     } catch (err) {
       if (!(err instanceof ApiError) || err.status !== 401) console.error(err);
@@ -40,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   return (
-    <AuthContext.Provider value={{ user, status, refresh, logout }}>
+    <AuthContext.Provider value={{ user, status, gmailConnected, refresh, logout }}>
       {children}
     </AuthContext.Provider>
   );
