@@ -21,17 +21,17 @@ export default function Home() {
   return (
     <section className="py-16 text-center">
       {deleted && (
-        <p className="mx-auto mb-8 max-w-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <p className="mx-auto mb-8 max-w-md rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">
           Your data is deleted and Sieve no longer has access to your Gmail.
         </p>
       )}
       {error && (
-        <p className="mx-auto mb-8 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="mx-auto mb-8 max-w-md rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {ERROR_MESSAGES[error] ?? 'Sign-in failed. Please try again.'}
         </p>
       )}
       <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Take back your inbox</h1>
-      <p className="mx-auto mt-4 max-w-xl text-slate-600">
+      <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-slate-400">
         See who fills your inbox, unsubscribe in one click, and keep only what matters. We only read
         email headers, never your messages.
       </p>
