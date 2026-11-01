@@ -1,5 +1,6 @@
 import {
   GOOGLE_AUTH_URL,
+  GOOGLE_REVOKE_URL,
   GOOGLE_SCOPES,
   GOOGLE_TOKEN_URL,
   GOOGLE_USERINFO_URL,
@@ -94,4 +95,16 @@ export async function fetchProfile(accessToken: string): Promise<GoogleProfile> 
   if (!res.ok) throw new HttpError(502, 'could not load google profile');
 
   return res.json() as Promise<GoogleProfile>;
+}
+
+// tells google to drop our access. revoking the refresh token also kills its access tokens
+export async function revokeToken(token: string) {
+  const res = await fetch(GOOGLE_REVOKE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token }),
+  });
+
+  // 400 means the token was already revoked or expired, which is what we wanted anyway
+  if (!res.ok && res.status !== 400) throw new HttpError(502, 'could not revoke google access');
 }
