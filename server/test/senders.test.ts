@@ -49,6 +49,30 @@ describe('SenderAggregator', () => {
     expect(agg.values()[0].unsubscribeMail).toBe('mailto:stop@news.com');
   });
 
+  it('adds new mail on top of seeded totals', () => {
+    const agg = new SenderAggregator('me@example.com');
+    agg.seed([
+      {
+        email: 'deals@shop.com',
+        name: 'Shop',
+        domain: 'shop.com',
+        count: 40,
+        firstSeen: new Date('2026-01-01'),
+        lastSeen: new Date('2026-03-01'),
+        unsubscribeUrl: 'https://shop.com/u',
+        unsubscribeMail: null,
+        oneClick: true,
+      },
+    ]);
+    agg.add(msg('Shop Deals <deals@shop.com>', '2026-05-01'));
+
+    const [s] = agg.values();
+    expect(s.count).toBe(41);
+    expect(s.firstSeen).toEqual(new Date('2026-01-01'));
+    expect(s.lastSeen).toEqual(new Date('2026-05-01'));
+    expect(s.unsubscribeUrl).toBe('https://shop.com/u');
+  });
+
   it('skips the user, sent mail and drafts', () => {
     const agg = new SenderAggregator('Me@Gmail.com');
     expect(agg.add(msg('me@gmail.com', '2026-07-01'))).toBe(false);
