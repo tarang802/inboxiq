@@ -6,8 +6,9 @@ import { createGmailClient } from './gmail';
 import { SenderAggregator } from './senderAggregator';
 import { saveSenders } from './senderStore';
 
-// gmail allows roughly 50 metadata reads a second per user; 8 in flight stays under it
-const CONCURRENCY = 8;
+// each metadata read takes up to a second, so 8 in flight left most of the quota unused.
+// the gmail client's rate limiter is what keeps this under google's per-user limit
+const CONCURRENCY = 16;
 
 // big inboxes take a long time to scan, so only look at the last year
 const WINDOW_MS = 365 * 24 * 60 * 60 * 1000;
