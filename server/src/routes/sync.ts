@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { syncLimiter } from '../middleware/rateLimit';
 import { latestSync, startSync } from '../services/sync';
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.post('/', async (req, res, next) => {
+router.post('/', syncLimiter, async (req, res, next) => {
   try {
     const sync = await startSync(req.user!);
     res.status(202).json({ sync });
