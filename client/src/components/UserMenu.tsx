@@ -16,18 +16,21 @@ export default function UserMenu() {
 
   return (
     <div className="flex items-center gap-3">
-      {user.picture ? (
-        <img
-          src={user.picture}
-          alt=""
-          referrerPolicy="no-referrer"
-          className="h-8 w-8 rounded-full"
-        />
-      ) : (
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700">
-          {initial}
-        </span>
-      )}
+      {/* the name is hidden on phones, so the avatar is the way into account settings */}
+      <Link to="/account" aria-label="Account">
+        {user.picture ? (
+          <img
+            src={user.picture}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="h-8 w-8 rounded-full"
+          />
+        ) : (
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700">
+            {initial}
+          </span>
+        )}
+      </Link>
       <Link to="/account" className="hidden text-slate-700 hover:text-slate-900 sm:inline">
         {user.name ?? user.email}
       </Link>
