@@ -40,11 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signed-out');
   }, []);
 
-  // the server removes everything and clears the session cookie
+  // the server removes everything and clears the session cookie. the caller decides
+  // where to go next and then calls refresh, so protected pages don't redirect first
   const deleteAccount = useCallback(async () => {
     await api('/me', { method: 'DELETE' });
-    setUser(null);
-    setStatus('signed-out');
   }, []);
 
   useEffect(() => {

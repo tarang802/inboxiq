@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const CONFIRM_WORD = 'delete';
 
 export default function Account() {
-  const { user, deleteAccount } = useAuth();
+  const { user, deleteAccount, refresh } = useAuth();
   const navigate = useNavigate();
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -16,7 +16,8 @@ export default function Account() {
     setError(null);
     try {
       await deleteAccount();
-      navigate('/?deleted=1');
+      navigate('/?deleted=1', { replace: true });
+      await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'could not delete your data');
       setBusy(false);
