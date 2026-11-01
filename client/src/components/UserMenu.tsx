@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function UserMenu() {
@@ -28,7 +28,9 @@ export default function UserMenu() {
           {initial}
         </span>
       )}
-      <span className="hidden text-slate-700 sm:inline">{user.name ?? user.email}</span>
+      <Link to="/account" className="hidden text-slate-700 hover:text-slate-900 sm:inline">
+        {user.name ?? user.email}
+      </Link>
       <button onClick={handleLogout} className="text-slate-500 hover:text-slate-900">
         Log out
       </button>

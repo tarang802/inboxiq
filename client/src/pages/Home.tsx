@@ -16,9 +16,15 @@ export default function Home() {
   const { status } = useAuth();
   const [params] = useSearchParams();
   const error = params.get('error');
+  const deleted = params.get('deleted') === '1';
 
   return (
     <section className="py-16 text-center">
+      {deleted && (
+        <p className="mx-auto mb-8 max-w-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Your data is deleted and Sieve no longer has access to your Gmail.
+        </p>
+      )}
       {error && (
         <p className="mx-auto mb-8 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {ERROR_MESSAGES[error] ?? 'Sign-in failed. Please try again.'}
