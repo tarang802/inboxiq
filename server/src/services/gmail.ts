@@ -1,5 +1,6 @@
 import { GMAIL_API_URL } from '../config/google';
 import { HttpError } from '../utils/httpError';
+import { RateLimiter } from '../utils/rateLimiter';
 import { withRetry } from '../utils/retry';
 import { getAccessToken, type AccessToken } from './googleAccount';
 
@@ -80,7 +81,13 @@ async function errorReason(res: Response) {
   return body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? res.statusText;
 }
 
+// gmail allows 250 quota units a second per user, and list and get cost 5 each.
+// keeping 8 requests in flight isn't enough on its own: fast replies blew past it
+const UNITS_PER_SECOND = 200;
+const UNITS_PER_REQUEST = 5;
+
 export function createGmailClient(userId: string) {
+  const quota = new RateLimiter(UNITS_PER_SECOND);
   let access: AccessToken | null = null;
   let pending: Promise<AccessToken> | null = null;
 
@@ -98,7 +105,10 @@ export function createGmailClient(userId: string) {
 
   async function request<T>(path: string, params: URLSearchParams): Promise<T> {
     const url = `${GMAIL_API_URL}${path}?${params}`;
-    const send = async () => fetch(url, { headers: { Authorization: `Bearer ${await token()}` } });
+    const send = async () => {
+      await quota.acquire(UNITS_PER_REQUEST);
+      return fetch(url, { headers: { Authorization: `Bearer ${await token()}` } });
+    };
 
     return withRetry(
       async () => {
