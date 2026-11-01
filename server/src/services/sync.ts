@@ -1,5 +1,6 @@
 import { prisma } from '../lib/db';
 import { HttpError } from '../utils/httpError';
+import { JobQueue } from '../utils/jobQueue';
 import { mapLimit } from '../utils/pool';
 import { createGmailClient } from './gmail';
 import { SenderAggregator } from './senderAggregator';
@@ -13,6 +14,11 @@ const WINDOW_MS = 365 * 24 * 60 * 60 * 1000;
 const MAX_MESSAGES = 50_000;
 
 const ACTIVE = ['QUEUED', 'RUNNING'] as const;
+
+// gmail limits are per user, but the db and this process are shared.
+// two syncs at a time keeps one big inbox from starving everyone else
+const SYNC_WORKERS = 2;
+const queue = new JobQueue(SYNC_WORKERS);
 
 interface SyncUser {
   id: string;
@@ -99,11 +105,14 @@ export async function startSync(user: SyncUser) {
   if (active) throw new HttpError(409, 'a sync is already running');
 
   const run = await prisma.syncRun.create({ data: { userId: user.id } });
-
-  // runs in the background for now; a real queue comes later
-  void runSync(run.id, user);
+  queue.add(user.id, () => runSync(run.id, user));
 
   return run;
+}
+
+// used when an account is deleted, so a waiting sync never starts for it
+export function cancelQueuedSync(userId: string) {
+  return queue.cancel(userId);
 }
 
 export function latestSync(userId: string) {
