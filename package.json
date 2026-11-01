@@ -11,7 +11,8 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w server && npm run build -w client",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "npm test -w server"
   },
   "devDependencies": {
     "prettier": "^3.9.10"
