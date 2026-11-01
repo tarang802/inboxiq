@@ -11,6 +11,8 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
+  // per-user gmail quota from google cloud > gmail api > quotas. new projects get 6000
+  GMAIL_UNITS_PER_MINUTE: z.coerce.number().int().min(100).default(6000),
   SESSION_SECRET: z.string().min(16).optional(),
   TOKEN_ENCRYPTION_KEY: z.string().optional(),
 });

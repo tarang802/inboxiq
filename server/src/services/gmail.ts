@@ -1,3 +1,4 @@
+import { env } from '../config/env';
 import { GMAIL_API_URL } from '../config/google';
 import { HttpError } from '../utils/httpError';
 import { RateLimiter } from '../utils/rateLimiter';
@@ -31,11 +32,6 @@ function isRetryable(err: unknown) {
     gmailStatus >= 500 ||
     (gmailStatus === 403 && RATE_LIMIT_REASONS.includes(reason))
   );
-}
-
-function retryAfterMs(res: Response) {
-  const seconds = Number(res.headers.get('retry-after'));
-  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined;
 }
 
 interface ListResponse {
@@ -76,18 +72,39 @@ function toMeta(msg: RawMessage): MessageMeta {
   };
 }
 
-async function errorReason(res: Response) {
-  const body = await res.json().catch(() => ({}));
-  return body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? res.statusText;
+interface ErrorInfo {
+  '@type'?: string;
+  metadata?: { window_start_time?: string };
 }
 
-// gmail allows 250 quota units a second per user, and list and get cost 5 each.
-// keeping 8 requests in flight isn't enough on its own: fast replies blew past it
-const UNITS_PER_SECOND = 200;
+// the quota is a per-minute window, and google says when the current one started.
+// waiting for the next window beats guessing with backoff
+function quotaResetMs(details: ErrorInfo[] | undefined) {
+  const start = Number(
+    details?.find((d) => d.metadata?.window_start_time)?.metadata?.window_start_time,
+  );
+  if (!Number.isFinite(start) || start <= 0) return undefined;
+
+  const wait = (start + 60) * 1000 - Date.now();
+  return wait > 0 ? wait + 1000 : undefined;
+}
+
+async function readError(res: Response) {
+  const body = await res.json().catch(() => ({}));
+  const reason: string = body?.error?.errors?.[0]?.reason ?? body?.error?.status ?? res.statusText;
+  const header = Number(res.headers.get('retry-after'));
+  const fromHeader = Number.isFinite(header) && header > 0 ? header * 1000 : undefined;
+
+  return { reason, retryAfterMs: fromHeader ?? quotaResetMs(body?.error?.details) };
+}
+
+// list and get both cost 5 units. stay under 90% of the per-user minute budget,
+// spread evenly, so parallel workers never trip the limit in the first place
 const UNITS_PER_REQUEST = 5;
+const unitsPerSecond = () => (env.GMAIL_UNITS_PER_MINUTE * 0.9) / 60;
 
 export function createGmailClient(userId: string) {
-  const quota = new RateLimiter(UNITS_PER_SECOND);
+  const quota = new RateLimiter(unitsPerSecond());
   let access: AccessToken | null = null;
   let pending: Promise<AccessToken> | null = null;
 
@@ -121,7 +138,8 @@ export function createGmailClient(userId: string) {
         }
 
         if (!res.ok) {
-          throw new GmailError(res.status, await errorReason(res), retryAfterMs(res));
+          const { reason, retryAfterMs } = await readError(res);
+          throw new GmailError(res.status, reason, retryAfterMs);
         }
         return res.json() as Promise<T>;
       },
@@ -129,7 +147,7 @@ export function createGmailClient(userId: string) {
         // google's quota is a per-minute window, so give it up to a couple of minutes to recover
         retries: 7,
         baseMs: 1000,
-        maxMs: 60_000,
+        maxMs: 65_000,
         shouldRetry: isRetryable,
         delayFor: (err) => (err instanceof GmailError ? err.retryAfterMs : undefined),
       },
