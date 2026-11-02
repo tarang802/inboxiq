@@ -9,8 +9,10 @@ import SenderTable from '../components/SenderTable';
 import SummaryCards from '../components/SummaryCards';
 import SyncPanel from '../components/SyncPanel';
 import type { SenderStatus } from '../lib/types';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function Dashboard() {
+  usePageTitle('Dashboard');
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0];
 

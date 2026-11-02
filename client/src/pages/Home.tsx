@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Sign-in was cancelled.',
@@ -13,6 +14,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export default function Home() {
+  usePageTitle();
   const { status } = useAuth();
   const [params] = useSearchParams();
   const error = params.get('error');

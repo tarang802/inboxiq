@@ -3,6 +3,7 @@ import BarList from '../components/BarList';
 import { getAnalytics } from '../lib/analytics';
 import { formatCount } from '../lib/format';
 import type { Analytics } from '../lib/types';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
@@ -15,6 +16,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint: stri
 }
 
 export default function Insights() {
+  usePageTitle('Insights');
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [error, setError] = useState<string | null>(null);
 

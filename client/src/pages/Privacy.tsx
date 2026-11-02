@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -10,6 +11,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function Privacy() {
+  usePageTitle('Privacy');
   return (
     <article className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-semibold">Privacy</h1>
