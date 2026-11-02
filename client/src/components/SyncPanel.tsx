@@ -29,9 +29,15 @@ export default function SyncPanel({
   const { gmailConnected, refresh } = useAuth();
 
   let status = 'You have not synced yet.';
-  if (sync && active) status = `Scanning your inbox… ${formatCount(sync.processed)} emails so far`;
+  // a catch-up sync only reports its count at the end, so 0 means "still looking"
+  if (sync && active) {
+    status = sync.processed
+      ? `Scanning your inbox… ${formatCount(sync.processed)} emails so far`
+      : 'Checking your inbox…';
+  }
   if (sync?.status === 'DONE' && sync.finishedAt) {
-    status = `Last synced ${formatDateTime(sync.finishedAt)} · ${formatCount(sync.processed)} emails scanned`;
+    const found = sync.processed ? `${formatCount(sync.processed)} emails checked` : 'no new mail';
+    status = `Last synced ${formatDateTime(sync.finishedAt)} · ${found}`;
   }
   if (sync?.status === 'FAILED') status = 'The last sync failed. Try again in a minute.';
 
