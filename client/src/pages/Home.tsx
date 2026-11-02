@@ -50,6 +50,11 @@ export default function Home() {
           Connect Gmail
         </a>
       )}
+      <p className="mt-4 text-sm">
+        <Link to="/privacy" className="text-indigo-600 hover:underline dark:text-indigo-400">
+          What Sieve can and can't see
+        </Link>
+      </p>
     </section>
   );
 }
