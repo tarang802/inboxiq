@@ -1,0 +1,40 @@
+# render blueprint: one web service runs the api and serves the built client.
+# values marked sync: false are secrets; render asks for them when the blueprint is created.
+# step-by-step setup is in docs/deploy.md
+services:
+  - type: web
+    name: sieve
+    runtime: node
+    plan: free
+    # the build needs dev dependencies (typescript, vite, prisma)
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run db:deploy -w server && npm start -w server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '24'
+      - key: NODE_ENV
+        value: production
+      # relative to server/, where the start command runs
+      - key: CLIENT_DIST
+        value: ../client/dist
+      # render puts one proxy in front of the app
+      - key: TRUST_PROXY
+        value: '1'
+      - key: GMAIL_UNITS_PER_MINUTE
+        value: '6000'
+      # e.g. https://sieve.onrender.com
+      - key: CLIENT_URL
+        sync: false
+      # e.g. https://sieve.onrender.com/api/auth/google/callback
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # 64 hex characters. use a new one, not your local key
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
