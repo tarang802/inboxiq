@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: formatting
+        run: npx prettier --check .
+      - name: prisma client
+        run: npm run db:generate -w server
+      - name: server typecheck
+        run: npm run typecheck -w server
+      - name: server tests
+        run: npm test -w server
+      - name: client build
+        run: npm run build -w client
