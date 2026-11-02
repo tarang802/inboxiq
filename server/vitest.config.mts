@@ -12,6 +12,7 @@ export default defineConfig({
       DATABASE_URL: '',
       GOOGLE_CLIENT_ID: '',
       GOOGLE_CLIENT_SECRET: '',
+      CLIENT_DIST: '',
     },
   },
 });
