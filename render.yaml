@@ -29,6 +29,7 @@ services:
       # e.g. https://sieve.onrender.com/api/auth/google/callback
       - key: GOOGLE_REDIRECT_URI
         sync: false
+      # neon's pooled url. migrations use DIRECT_URL instead if you add it (see docs/deploy.md)
       - key: DATABASE_URL
         sync: false
       - key: GOOGLE_CLIENT_ID
