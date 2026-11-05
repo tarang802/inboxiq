@@ -1,12 +1,15 @@
+import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Insights from './pages/Insights';
-import Account from './pages/Account';
 import NotFound from './pages/NotFound';
-import Privacy from './pages/Privacy';
+
+// the landing page loads on its own; the signed-in pages and their ui come in as needed
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Insights = lazy(() => import('./pages/Insights'));
+const Account = lazy(() => import('./pages/Account'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 export default function App() {
   return (

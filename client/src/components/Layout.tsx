@@ -1,7 +1,9 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import Footer from './Footer';
 import Navbar from './Navbar';
+import PageLoader from './PageLoader';
 import ReconnectBanner from './ReconnectBanner';
 
 export default function Layout() {
@@ -13,7 +15,9 @@ export default function Layout() {
       <ReconnectBanner />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <ErrorBoundary key={pathname}>
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </ErrorBoundary>
       </main>
       <Footer />
