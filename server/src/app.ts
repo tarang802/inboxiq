@@ -28,12 +28,14 @@ const apiHeaders = helmet({
   },
 });
 
-// the built client loads only its own files, plus google profile pictures
+// the built client loads only its own files, plus google profile pictures.
+// radix and sonner inject small <style> tags at runtime, so styles allow inline; scripts don't
 const pageHeaders = helmet({
   contentSecurityPolicy: {
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https://*.googleusercontent.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
