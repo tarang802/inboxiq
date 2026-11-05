@@ -1,5 +1,6 @@
+import { lookup as dnsLookup } from 'node:dns';
 import { lookup } from 'node:dns/promises';
-import { BlockList, isIP } from 'node:net';
+import { BlockList, isIP, type LookupFunction } from 'node:net';
 import { HttpError } from '../utils/httpError';
 
 // unsubscribe links come from email headers, which anyone can write. without this
@@ -37,8 +38,29 @@ function isBlocked(address: string, family: number) {
   return blocked.check(address, family === 6 ? 'ipv6' : 'ipv4');
 }
 
-// throws unless the url is https and every address it resolves to is public.
-// a dns answer could still change between this check and the request; good enough for v1
+export class PrivateAddressError extends Error {
+  constructor(hostname: string) {
+    super(`${hostname} resolves to a private address`);
+    this.name = 'PrivateAddressError';
+  }
+}
+
+// the lookup a request's socket uses, so the address that gets checked is the one it
+// connects to. checking first and connecting later leaves a gap where a dns server
+// can answer public for the check and private for the request (dns rebinding)
+export const publicLookup: LookupFunction = (hostname, options, callback) => {
+  dnsLookup(hostname, { ...options, all: true }, (err, addresses) => {
+    if (err) return callback(err, '', 0);
+    if (!addresses.length || addresses.some((a) => isBlocked(a.address, a.family))) {
+      return callback(new PrivateAddressError(hostname), '', 0);
+    }
+    if (options.all) return callback(null, addresses);
+    callback(null, addresses[0].address, addresses[0].family);
+  });
+};
+
+// throws unless the url is https and every address it resolves to right now is public.
+// it gives a clear error up front; publicLookup is what holds at connect time
 export async function assertPublicUrl(raw: string) {
   let url: URL;
   try {
