@@ -1,29 +1,49 @@
+import { MailIcon, MailXIcon, MousePointerClickIcon, UsersIcon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCount } from '../lib/format';
 import type { SenderSummary } from '../lib/types';
 
-function Card({ label, value, hint }: { label: string; value: string; hint?: string }) {
+interface StatProps {
+  label: string;
+  value: number | undefined;
+  hint?: string;
+  icon: typeof MailIcon;
+}
+
+function Stat({ label, value, hint, icon: Icon }: StatProps) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
-    </div>
+    <Card size="sm">
+      <CardHeader>
+        <CardDescription className="flex items-center justify-between gap-2">
+          {label}
+          <Icon className="size-4" />
+        </CardDescription>
+        <CardTitle className="text-2xl tabular-nums">
+          {value === undefined ? <Skeleton className="h-8 w-16" /> : formatCount(value)}
+        </CardTitle>
+      </CardHeader>
+      {hint && (
+        <CardContent>
+          <p className="text-xs text-muted-foreground">{hint}</p>
+        </CardContent>
+      )}
+    </Card>
   );
 }
 
 export default function SummaryCards({ summary }: { summary: SenderSummary | null }) {
-  const show = (n: number | undefined) => (n === undefined ? '–' : formatCount(n));
   const share =
     summary && summary.senders
       ? `${Math.round((summary.unsubscribable / summary.senders) * 100)}% of senders`
       : undefined;
 
   return (
-    <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Card label="Senders" value={show(summary?.senders)} />
-      <Card label="Emails in the last year" value={show(summary?.messages)} />
-      <Card label="Can unsubscribe" value={show(summary?.unsubscribable)} hint={share} />
-      <Card label="One-click unsubscribe" value={show(summary?.oneClick)} />
+    <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <Stat label="Senders" value={summary?.senders} icon={UsersIcon} />
+      <Stat label="Emails in the last year" value={summary?.messages} icon={MailIcon} />
+      <Stat label="Can unsubscribe" value={summary?.unsubscribable} hint={share} icon={MailXIcon} />
+      <Stat label="One-click unsubscribe" value={summary?.oneClick} icon={MousePointerClickIcon} />
     </div>
   );
 }

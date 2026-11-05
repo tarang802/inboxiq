@@ -1,3 +1,14 @@
+import { SearchIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { SenderParams, SenderSort } from '../lib/senders';
 import type { SenderStatus } from '../lib/types';
 
@@ -16,8 +27,8 @@ const STATUS_OPTIONS: { value: SenderStatus | ''; label: string }[] = [
   { value: 'UNSUBSCRIBED', label: 'Unsubscribed' },
 ];
 
-const field =
-  'rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+// radix select can't hold an empty value, so 'all' stands in for no filter
+const ALL = 'all';
 
 interface Props {
   params: SenderParams;
@@ -27,50 +38,60 @@ interface Props {
 export default function SenderFilters({ params, onChange }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <input
-        type="search"
-        value={params.q ?? ''}
-        onChange={(e) => onChange({ q: e.target.value })}
-        placeholder="Search by name, address or domain"
-        aria-label="Search senders"
-        className={`${field} sm:flex-1`}
-      />
-      <select
-        value={params.status ?? ''}
-        onChange={(e) => onChange({ status: (e.target.value || undefined) as SenderStatus })}
-        aria-label="Filter by status"
-        className={field}
+      <div className="relative sm:flex-1">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={params.q ?? ''}
+          onChange={(e) => onChange({ q: e.target.value })}
+          placeholder="Search by name, address or domain"
+          aria-label="Search senders"
+          className="pl-8"
+        />
+      </div>
+      <Select
+        value={params.status ?? ALL}
+        onValueChange={(v) => onChange({ status: v === ALL ? undefined : (v as SenderStatus) })}
       >
-        {STATUS_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <select
+        <SelectTrigger aria-label="Filter by status" className="w-full sm:w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_OPTIONS.map((o) => (
+            <SelectItem key={o.value || ALL} value={o.value || ALL}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
         value={params.sort}
-        onChange={(e) => {
-          const option = SORT_OPTIONS.find((o) => o.value === e.target.value)!;
+        onValueChange={(v) => {
+          const option = SORT_OPTIONS.find((o) => o.value === v)!;
           onChange({ sort: option.value, order: option.order });
         }}
-        aria-label="Sort senders"
-        className={field}
       >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-        <input
-          type="checkbox"
+        <SelectTrigger aria-label="Sort senders" className="w-full sm:w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SORT_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="unsubscribable"
           checked={params.unsubscribable ?? false}
-          onChange={(e) => onChange({ unsubscribable: e.target.checked })}
-          className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
+          onCheckedChange={(checked) => onChange({ unsubscribable: checked === true })}
         />
-        Can unsubscribe
-      </label>
+        <Label htmlFor="unsubscribable" className="font-normal whitespace-nowrap">
+          Can unsubscribe
+        </Label>
+      </div>
     </div>
   );
 }
