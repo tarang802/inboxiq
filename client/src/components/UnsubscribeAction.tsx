@@ -1,4 +1,7 @@
+import { CheckIcon, ExternalLinkIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import type { Sender } from '../lib/types';
 
 // links come from email headers, so never render anything but web or mail links
@@ -17,21 +20,22 @@ interface Props {
   onUnsubscribe: (id: string, confirm: boolean) => Promise<void>;
 }
 
-const button =
-  'rounded-md border border-red-200 dark:border-red-500/30 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50';
+const tone = 'text-destructive hover:text-destructive';
 
 export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
+  const name = sender.name ?? sender.email;
 
   async function run(confirm: boolean) {
     setBusy(true);
-    setError(null);
     try {
       await onUnsubscribe(sender.id, confirm);
+      toast.success(confirm ? `Marked ${name} as unsubscribed` : `Unsubscribed from ${name}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'unsubscribe failed');
+      toast.error(err instanceof Error ? err.message : 'unsubscribe failed', {
+        description: name,
+      });
     } finally {
       setBusy(false);
     }
@@ -39,16 +43,15 @@ export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
 
   if (sender.oneClick) {
     return (
-      <span className="inline-flex flex-col">
-        <button className={button} disabled={busy} onClick={() => run(false)}>
-          {busy ? 'Unsubscribing…' : 'Unsubscribe'}
-        </button>
-        {error && (
-          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600 dark:text-red-400">
-            {error}
-          </span>
-        )}
-      </span>
+      <Button
+        variant="outline"
+        size="xs"
+        className={tone}
+        disabled={busy}
+        onClick={() => run(false)}
+      >
+        {busy ? 'Unsubscribing…' : 'Unsubscribe'}
+      </Button>
     );
   }
 
@@ -58,29 +61,26 @@ export default function UnsubscribeAction({ sender, onUnsubscribe }: Props) {
 
   if (opened) {
     return (
-      <span className="inline-flex flex-col">
-        <button className={button} disabled={busy} onClick={() => run(true)}>
-          {busy ? 'Saving…' : 'Done? Mark it'}
-        </button>
-        {error && (
-          <span className="mt-1 max-w-40 whitespace-normal text-xs text-red-600 dark:text-red-400">
-            {error}
-          </span>
-        )}
-      </span>
+      <Button variant="outline" size="xs" disabled={busy} onClick={() => run(true)}>
+        <CheckIcon />
+        {busy ? 'Saving…' : 'Done? Mark it'}
+      </Button>
     );
   }
 
+  const byMail = href.startsWith('mailto:');
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => setOpened(true)}
-      className={button}
-      title={href.startsWith('mailto:') ? 'Opens an unsubscribe email' : 'Opens the sender’s page'}
-    >
-      {href.startsWith('mailto:') ? 'Unsubscribe by email ↗' : 'Unsubscribe ↗'}
-    </a>
+    <Button asChild variant="outline" size="xs" className={tone}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => setOpened(true)}
+        title={byMail ? 'Opens an unsubscribe email' : 'Opens the sender’s page'}
+      >
+        {byMail ? <MailIcon /> : <ExternalLinkIcon />}
+        Unsubscribe
+      </a>
+    </Button>
   );
 }

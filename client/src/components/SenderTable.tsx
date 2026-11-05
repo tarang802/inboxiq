@@ -1,4 +1,19 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { formatCount, timeAgo } from '../lib/format';
 import type { Sender, SenderStatus } from '../lib/types';
 import UnsubscribeAction from './UnsubscribeAction';
@@ -6,60 +21,38 @@ import UnsubscribeAction from './UnsubscribeAction';
 type SettableStatus = Exclude<SenderStatus, 'UNSUBSCRIBED'>;
 
 function UnsubscribeBadge({ sender }: { sender: Sender }) {
-  let label = 'None';
-  let style = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
-
   if (sender.oneClick) {
-    label = 'One-click';
-    style = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
-  } else if (sender.unsubscribeUrl) {
-    label = 'Link';
-    style = 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300';
-  } else if (sender.unsubscribeMail) {
-    label = 'Email';
-    style = 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    return (
+      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">One-click</Badge>
+    );
   }
-
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>{label}</span>;
+  if (sender.unsubscribeUrl) {
+    return <Badge className="bg-sky-500/10 text-sky-700 dark:text-sky-300">Link</Badge>;
+  }
+  if (sender.unsubscribeMail) {
+    return <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">Email</Badge>;
+  }
+  return <Badge variant="secondary">None</Badge>;
 }
 
 function ClutterBar({ score }: { score: number }) {
   const color =
-    score >= 70 ? 'bg-red-500' : score >= 40 ? 'bg-amber-500' : 'bg-slate-400 dark:bg-slate-600';
+    score >= 70 ? 'bg-red-500' : score >= 40 ? 'bg-amber-500' : 'bg-muted-foreground/50';
 
   return (
-    <div className="flex items-center gap-2" title={`Clutter score ${score} of 100`}>
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-        <div className={`h-full ${color}`} style={{ width: `${score}%` }} />
-      </div>
-      <span className="w-6 text-right text-xs tabular-nums text-slate-600 dark:text-slate-400">
-        {score}
-      </span>
-    </div>
-  );
-}
-
-interface ActionButtonProps {
-  active: boolean;
-  label: string;
-  activeLabel: string;
-  disabled: boolean;
-  onClick: () => void;
-}
-
-function ActionButton({ active, label, activeLabel, disabled, onClick }: ActionButtonProps) {
-  const style = active
-    ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800';
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md border px-2 py-1 text-xs font-medium disabled:opacity-50 ${style}`}
-    >
-      {active ? activeLabel : label}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex w-fit items-center gap-2">
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+            <div className={cn('h-full', color)} style={{ width: `${score}%` }} />
+          </div>
+          <span className="w-6 text-right text-xs text-muted-foreground tabular-nums">{score}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        Clutter score {score} of 100: volume, recency and newsletter signals
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -101,105 +94,91 @@ export default function SenderTable({
     try {
       await onStatusChange(sender.id, sender.status === status ? 'ACTIVE' : status);
     } catch (err) {
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'could not update the sender');
     } finally {
       setBusyId(null);
     }
   }
 
+  function statusButton(sender: Sender, status: SettableStatus, label: string, done: string) {
+    const active = sender.status === status;
+    return (
+      <Button
+        variant={active ? 'secondary' : 'ghost'}
+        size="xs"
+        className={cn(active && 'bg-primary/10 text-primary hover:bg-primary/15')}
+        aria-pressed={active}
+        disabled={busyId === sender.id}
+        onClick={() => toggle(sender, status)}
+      >
+        {active ? done : label}
+      </Button>
+    );
+  }
+
   return (
-    <div className="relative overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          <tr>
-            <th className="w-10 py-3 pl-4">
-              <input
-                type="checkbox"
+    <Card className="py-0">
+      <Table>
+        <TableHeader className="bg-muted/50">
+          <TableRow>
+            <TableHead className="w-10 pl-4">
+              <Checkbox
                 aria-label="Select all senders on this page"
-                checked={allSelected}
-                ref={(el) => {
-                  if (el) el.indeterminate = someSelected;
-                }}
-                onChange={toggleAll}
-                className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
+                checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                onCheckedChange={toggleAll}
               />
-            </th>
-            <th className="px-4 py-3 font-medium">Sender</th>
-            <th className="px-4 py-3 text-right font-medium">Emails</th>
-            <th className="px-4 py-3 font-medium">Last email</th>
-            <th className="px-4 py-3 font-medium">Unsubscribe</th>
-            <th className="px-4 py-3 font-medium">Clutter</th>
-            <th className="px-4 py-3 font-medium">
+            </TableHead>
+            <TableHead>Sender</TableHead>
+            <TableHead className="text-right">Emails</TableHead>
+            <TableHead>Last email</TableHead>
+            <TableHead>Unsubscribe</TableHead>
+            <TableHead>Clutter</TableHead>
+            <TableHead>
               <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {senders.map((sender) => (
-            <tr
-              key={sender.id}
-              className={
-                selected.has(sender.id)
-                  ? 'bg-indigo-50/50 dark:bg-indigo-500/10'
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-              }
-            >
-              <td className="py-3 pl-4">
-                <input
-                  type="checkbox"
+            <TableRow key={sender.id} data-state={selected.has(sender.id) ? 'selected' : undefined}>
+              <TableCell className="pl-4">
+                <Checkbox
                   aria-label={`Select ${sender.name ?? sender.email}`}
                   checked={selected.has(sender.id)}
-                  onChange={() => toggleRow(sender.id)}
-                  className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 dark:text-indigo-400"
+                  onCheckedChange={() => toggleRow(sender.id)}
                 />
-              </td>
-              <td className="max-w-xs px-4 py-3">
+              </TableCell>
+              <TableCell className="max-w-xs">
                 <p className="truncate font-medium">{sender.name ?? sender.email}</p>
                 {sender.name && (
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                    {sender.email}
-                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{sender.email}</p>
                 )}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums">
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
                 {formatCount(sender.messageCount)}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-400">
-                {timeAgo(sender.lastSeenAt)}
-              </td>
-              <td className="px-4 py-3">
+              </TableCell>
+              <TableCell className="text-muted-foreground">{timeAgo(sender.lastSeenAt)}</TableCell>
+              <TableCell>
                 <UnsubscribeBadge sender={sender} />
-              </td>
-              <td className="px-4 py-3">
+              </TableCell>
+              <TableCell>
                 <ClutterBar score={sender.clutterScore} />
-              </td>
-              <td className="whitespace-nowrap px-4 py-3">
+              </TableCell>
+              <TableCell>
                 {sender.status === 'UNSUBSCRIBED' ? (
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Unsubscribed</span>
+                  <span className="text-xs text-muted-foreground">Unsubscribed</span>
                 ) : (
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-1">
                     <UnsubscribeAction sender={sender} onUnsubscribe={onUnsubscribe} />
-                    <ActionButton
-                      label="Keep"
-                      activeLabel="Kept"
-                      active={sender.status === 'KEPT'}
-                      disabled={busyId === sender.id}
-                      onClick={() => toggle(sender, 'KEPT')}
-                    />
-                    <ActionButton
-                      label="Ignore"
-                      activeLabel="Ignored"
-                      active={sender.status === 'IGNORED'}
-                      disabled={busyId === sender.id}
-                      onClick={() => toggle(sender, 'IGNORED')}
-                    />
+                    {statusButton(sender, 'KEPT', 'Keep', 'Kept')}
+                    {statusButton(sender, 'IGNORED', 'Ignore', 'Ignored')}
                   </div>
                 )}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </Card>
   );
 }
