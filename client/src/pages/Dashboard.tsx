@@ -1,4 +1,9 @@
+import { CircleAlertIcon, InboxIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '../context/AuthContext';
 import { useSenders } from '../hooks/useSenders';
 import { useSenderSummary } from '../hooks/useSenderSummary';
@@ -10,6 +15,26 @@ import SummaryCards from '../components/SummaryCards';
 import SyncPanel from '../components/SyncPanel';
 import type { SenderStatus } from '../lib/types';
 import { usePageTitle } from '../hooks/usePageTitle';
+
+// stands in for the table while the first page loads
+function TableSkeleton() {
+  return (
+    <Card className="gap-0 py-0">
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i} className="flex items-center gap-4 border-b px-4 py-3 last:border-0">
+          <Skeleton className="size-4" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-56" />
+          </div>
+          <Skeleton className="h-4 w-10" />
+          <Skeleton className="hidden h-5 w-16 rounded-full sm:block" />
+          <Skeleton className="hidden h-4 w-24 md:block" />
+        </div>
+      ))}
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   usePageTitle('Dashboard');
@@ -55,7 +80,7 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-2xl font-semibold">{firstName ? `Hi, ${firstName}` : 'Dashboard'}</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
+      <p className="mt-1 text-muted-foreground">
         See who sends you the most mail and decide who stays.
       </p>
 
@@ -69,18 +94,31 @@ export default function Dashboard() {
           onDone={afterBulk}
           onClear={() => setSelected(new Set())}
         />
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-        {!data && !error && (
-          <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+        {error && (
+          <Alert variant="destructive">
+            <CircleAlertIcon />
+            <AlertTitle>Couldn't load your senders</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
+        {!data && !error && <TableSkeleton />}
         {data && data.total === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-12 text-center">
+          <div className="flex flex-col items-center rounded-xl border border-dashed bg-card px-6 py-12 text-center">
+            <InboxIcon className="size-8 text-muted-foreground" />
             {hasFilters ? (
-              <p className="text-slate-600 dark:text-slate-400">No senders match these filters.</p>
+              <>
+                <p className="mt-3 font-medium">No senders match these filters</p>
+                <Button
+                  variant="link"
+                  onClick={() => update({ q: '', status: undefined, unsubscribable: false })}
+                >
+                  Clear filters
+                </Button>
+              </>
             ) : (
               <>
-                <p className="font-medium">No senders yet</p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                <p className="mt-3 font-medium">No senders yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Run a sync above and your senders will show up here.
                 </p>
               </>
