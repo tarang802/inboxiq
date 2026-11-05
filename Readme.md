@@ -24,14 +24,14 @@ The full write-up is on the app's [privacy page](client/src/pages/Privacy.tsx).
 
 ## Tech stack
 
-| Part     | Tools                                                          |
-| -------- | -------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, React Router       |
-| Backend  | Node 24, Express 5, TypeScript, zod                            |
-| Database | PostgreSQL (Neon), Prisma 7                                    |
-| Google   | OAuth 2.0 with PKCE, Gmail API (metadata scope), plain `fetch` |
-| Testing  | Vitest, supertest                                              |
-| Tooling  | npm workspaces, Prettier, GitHub Actions, Render               |
+| Part     | Tools                                                               |
+| -------- | ------------------------------------------------------------------- |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui, React Router |
+| Backend  | Node 24, Express 5, TypeScript, zod                                 |
+| Database | PostgreSQL (Neon), Prisma 7                                         |
+| Google   | OAuth 2.0 with PKCE, Gmail API (metadata scope), plain `fetch`      |
+| Testing  | Vitest, supertest                                                   |
+| Tooling  | npm workspaces, Prettier, GitHub Actions, Render                    |
 
 ## How it works
 
