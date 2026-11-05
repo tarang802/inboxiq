@@ -5,7 +5,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-8">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-2 space-y-3 text-slate-600 dark:text-slate-400">{children}</div>
+      <div className="mt-2 space-y-3 text-muted-foreground">{children}</div>
     </section>
   );
 }
@@ -15,7 +15,7 @@ export default function Privacy() {
   return (
     <article className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-semibold">Privacy</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
+      <p className="mt-2 text-muted-foreground">
         Sieve exists to clean up your inbox, not to read it. This page says exactly what it touches.
       </p>
 
@@ -68,7 +68,7 @@ export default function Privacy() {
             href="https://developers.google.com/terms/api-services-user-data-policy"
             target="_blank"
             rel="noreferrer"
-            className="text-indigo-600 hover:underline dark:text-indigo-400"
+            className="text-primary underline-offset-4 hover:underline"
           >
             Google API Services User Data Policy
           </a>
@@ -85,7 +85,7 @@ export default function Privacy() {
             href="https://myaccount.google.com/permissions"
             target="_blank"
             rel="noreferrer"
-            className="text-indigo-600 hover:underline dark:text-indigo-400"
+            className="text-primary underline-offset-4 hover:underline"
           >
             Google account settings
           </a>

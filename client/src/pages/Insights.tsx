@@ -1,4 +1,8 @@
+import { CircleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import BarList from '../components/BarList';
 import { getAnalytics } from '../lib/analytics';
 import { formatCount } from '../lib/format';
@@ -7,10 +11,29 @@ import { usePageTitle } from '../hooks/usePageTitle';
 
 function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+    <Card>
+      <CardHeader>
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-3xl tabular-nums">{value}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InsightsSkeleton() {
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-80 rounded-xl" />
+        <Skeleton className="h-80 rounded-xl" />
+      </div>
     </div>
   );
 }
@@ -26,9 +49,33 @@ export default function Insights() {
       .catch((err) => setError(err instanceof Error ? err.message : 'could not load insights'));
   }, []);
 
-  if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
-  if (!analytics)
-    return <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">Loading…</p>;
+  const header = (
+    <>
+      <h1 className="text-2xl font-semibold">Insights</h1>
+      <p className="mt-1 text-muted-foreground">Where your mail comes from over the last year.</p>
+    </>
+  );
+
+  if (error) {
+    return (
+      <div>
+        {header}
+        <Alert variant="destructive" className="mt-6">
+          <CircleAlertIcon />
+          <AlertTitle>Couldn't load insights</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  if (!analytics) {
+    return (
+      <div>
+        {header}
+        <InsightsSkeleton />
+      </div>
+    );
+  }
 
   const { topSenders, topDomains, unsubscribe, unsubscribed } = analytics;
   const totalSenders =
@@ -38,10 +85,7 @@ export default function Insights() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Insights</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
-        Where your mail comes from over the last year.
-      </p>
+      {header}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <Stat
