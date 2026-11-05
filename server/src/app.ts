@@ -2,7 +2,6 @@ import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import healthRouter from './routes/health';
@@ -14,6 +13,7 @@ import analyticsRouter from './routes/analytics';
 import { loadSession } from './middleware/auth';
 import { apiLimiter, authLimiter } from './middleware/rateLimit';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { requestLog } from './middleware/requestLog';
 
 // the api only ever returns json and redirects, so its responses may load nothing at all
 const apiHeaders = helmet({
@@ -91,7 +91,7 @@ interface AppOptions {
 export function createApp({ clientDist = env.CLIENT_DIST }: AppOptions = {}) {
   const app = express();
   app.set('trust proxy', env.TRUST_PROXY);
-  if (env.NODE_ENV !== 'test') app.use(morgan('dev'));
+  if (env.NODE_ENV !== 'test') app.use(requestLog());
 
   if (clientDist) {
     app.use('/api', apiRouter());
