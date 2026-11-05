@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
@@ -27,15 +28,12 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="py-16 text-center" role="alert">
         <p className="font-medium">Something went wrong on this page.</p>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Reloading usually fixes it. Your data is safe.
         </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
+        <Button className="mt-4" onClick={() => window.location.reload()}>
           Reload
-        </button>
+        </Button>
       </div>
     );
   }

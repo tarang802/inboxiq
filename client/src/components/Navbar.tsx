@@ -1,23 +1,26 @@
 import { Link, NavLink } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  isActive
-    ? 'font-medium text-slate-900 dark:text-slate-100'
-    : 'hover:text-slate-900 dark:hover:text-slate-100';
+  cn(
+    'rounded-md px-2.5 py-1.5 text-sm transition-colors hover:text-foreground',
+    isActive ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground',
+  );
 
 export default function Navbar() {
   const { status } = useAuth();
 
   return (
-    <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+    <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
+      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4">
         <Link to="/" className="text-lg font-semibold tracking-tight">
-          Sieve<span className="text-indigo-600 dark:text-indigo-400">.</span>
+          Sieve<span className="text-primary">.</span>
         </Link>
-        <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-1">
           {status === 'signed-in' && (
             <>
               <NavLink to="/dashboard" className={navClass}>
@@ -26,15 +29,15 @@ export default function Navbar() {
               <NavLink to="/insights" className={navClass}>
                 Insights
               </NavLink>
-              <UserMenu />
             </>
           )}
-          {status === 'signed-out' && (
-            <a href="/api/auth/google" className="hover:text-slate-900 dark:hover:text-slate-100">
-              Sign in
-            </a>
-          )}
           <ThemeToggle />
+          {status === 'signed-in' && <UserMenu />}
+          {status === 'signed-out' && (
+            <Button asChild size="sm">
+              <a href="/api/auth/google">Sign in</a>
+            </Button>
+          )}
         </div>
       </nav>
     </header>
