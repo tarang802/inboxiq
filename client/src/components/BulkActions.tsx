@@ -1,4 +1,18 @@
+import { XIcon } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { bulkAction, type BulkAction, type BulkResult } from '../lib/senders';
 import type { Sender } from '../lib/types';
 
@@ -25,75 +39,72 @@ interface Props {
 
 export default function BulkActions({ senders, onDone, onClear }: Props) {
   const [busy, setBusy] = useState<BulkAction | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
-  if (!senders.length && !message) return null;
+  if (!senders.length) return null;
 
   const oneClick = senders.filter((s) => s.oneClick && s.status !== 'UNSUBSCRIBED').length;
 
   async function run(action: BulkAction) {
     setBusy(action);
-    setMessage(null);
     try {
       const result = await bulkAction(
         senders.map((s) => s.id),
         action,
       );
-      setMessage(describe(action, result));
+      const message = describe(action, result);
+      if (result.failed?.length) toast.warning(message);
+      else toast.success(message);
       onDone();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'something went wrong');
+      toast.error(err instanceof Error ? err.message : 'something went wrong');
     } finally {
       setBusy(null);
     }
   }
 
-  const button =
-    'rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:opacity-50';
-
   return (
-    <div className="sticky top-2 z-10 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 shadow-sm">
-      {senders.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-2 text-sm font-medium">
-            {plural(senders.length, 'sender')} selected
-          </span>
-          <button className={button} disabled={!!busy} onClick={() => run('keep')}>
-            Keep
-          </button>
-          <button className={button} disabled={!!busy} onClick={() => run('ignore')}>
-            Ignore
-          </button>
-          <button className={button} disabled={!!busy} onClick={() => run('reset')}>
-            Reset
-          </button>
-          <button
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+    <div className="sticky top-16 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-card/95 px-3 py-2 shadow-sm backdrop-blur">
+      <span className="mr-1 text-sm font-medium">{plural(senders.length, 'sender')} selected</span>
+      <Button variant="outline" size="sm" disabled={!!busy} onClick={() => run('keep')}>
+        Keep
+      </Button>
+      <Button variant="outline" size="sm" disabled={!!busy} onClick={() => run('ignore')}>
+        Ignore
+      </Button>
+      <Button variant="outline" size="sm" disabled={!!busy} onClick={() => run('reset')}>
+        Reset
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="destructive"
+            size="sm"
             disabled={!!busy || oneClick === 0}
             title={oneClick ? undefined : 'None of these support one-click unsubscribe'}
-            onClick={() => run('unsubscribe')}
           >
-            {busy === 'unsubscribe' ? 'Unsubscribing…' : `Unsubscribe from ${oneClick} (one-click)`}
-          </button>
-          <button
-            className="ml-auto text-sm text-slate-600 dark:text-slate-400 hover:underline"
-            onClick={onClear}
-          >
-            Clear
-          </button>
-        </div>
-      )}
-      {message && (
-        <div className="flex items-start justify-between gap-3 text-sm text-slate-700 dark:text-slate-300 [&:not(:first-child)]:mt-2">
-          <p>{message}</p>
-          <button
-            className="text-slate-500 dark:text-slate-400 hover:underline"
-            onClick={() => setMessage(null)}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+            {busy === 'unsubscribe' ? 'Unsubscribing…' : `Unsubscribe from ${oneClick}`}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsubscribe from {plural(oneClick, 'sender')}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sieve sends each of them a one-click unsubscribe request. Senders without one-click
+              support are skipped; do those one by one from the table.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => run('unsubscribe')}>
+              Unsubscribe
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear}>
+        <XIcon />
+        Clear
+      </Button>
     </div>
   );
 }
